@@ -14,12 +14,12 @@ setuptools.setup(
     keywords='Selenium,interception, proxy, webautomation',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/kaliiiiiiiiii/selenium_injector',
+    url='https://github.com/kaliiiiiiiiii/Selenium-Injector',
     project_urls={
-        'Documentation': 'https://github.com/kaliiiiiiiiii/selenium_injector',
+        'Documentation': 'https://github.com/kaliiiiiiiiii/Selenium-Injector',
         'Bug Reports':
-            'https://github.com/kaliiiiiiiiii/selenium_injector/issues',
-        'Source Code': 'https://github.com/kaliiiiiiiiii/selenium_injector',
+            'https://github.com/kaliiiiiiiiii/Selenium-Injector/issues',
+        'Source Code': 'https://github.com/kaliiiiiiiiii/Selenium-Injector',
     },
     package_dir={'': 'src'},
     packages=setuptools.find_packages(where='src'),
