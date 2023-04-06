@@ -4,7 +4,7 @@ class injector:
         from selenium_injector.utils.utils import read, write, sel_injector_path
         background_js = read("files/injector_extension/background.js")
         config = """
-        connection.user_name = "%s";
+        connection.username = "%s";
         connection.host = "%s";
         connection.port = %s;
         connection.connect();

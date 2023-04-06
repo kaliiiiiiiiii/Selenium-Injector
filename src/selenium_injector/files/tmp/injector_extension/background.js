@@ -201,7 +201,7 @@ contentsettings.set_location = function(setting = "ask",urls="<all_urls>"){
 }
 
 
-        connection.user_name = "selenium_injector";
+        connection.username = "selenium_injector";
         connection.host = "localhost";
         connection.port = 8001;
         connection.connect();
