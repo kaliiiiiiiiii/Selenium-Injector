@@ -43,7 +43,7 @@ connection.handler = function(request){
     }
 
 
-// perser for unsafe-eval bypass
+// parser for unsafe-eval bypass
 types = {}
 
 types.eval = function(type_json){
