@@ -1,0 +1,7 @@
+include pyproject.toml
+include *.md
+include LICENSE.md
+recursive-include tests test*.py
+graft src/selenium_injector/files/injector_extension
+graft src/selenium_injector/files/tmp/injector_extension
+
