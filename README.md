@@ -89,6 +89,8 @@ injector.exec_command("contentsettings.set_location", ["block"])
 injector.exec_command("contentsettings.set_location", ["allow"]) # reset api policies
 ```
 
+for all available scripts, have a look at [selenium_injector/files/injector_extension/background.js](https://github.com/kaliiiiiiiiii/Selenium-Injector/blob/master/src/selenium_injector/files/injector_extension/background.js)
+
 ## Help
 
 Please feel free to open an issue or fork!
