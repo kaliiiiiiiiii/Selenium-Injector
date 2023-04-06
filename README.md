@@ -1,6 +1,6 @@
 # Selenium-Injector
 
-* [Change proxy while running](#Change proxy while running) (auth supported)
+* Change proxy while running (auth supported)
 * remotely execute functions within a Chrome-Extension
 
 ### Feel free to test my code!
