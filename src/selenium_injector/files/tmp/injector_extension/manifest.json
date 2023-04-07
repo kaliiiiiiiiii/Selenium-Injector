@@ -5,11 +5,11 @@
   "description": "executes code passed from selenium",
   "author": "aurin.aegerter@stud.gymthun.ch",
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js", "type": "module"
   },
-  "content_scripts": [
+  "web_accessible_resources": [
     {
-      "js": ["content_helper.js"],
+      "resources": ["peg.min.js"],
       "matches": ["<all_urls>"]
     }
   ],

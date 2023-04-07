@@ -14,9 +14,9 @@ function isFunction(functionToCheck) {
 
 
 // connection to python
-connection = {}
+globalThis.connection = {}
 connection.host = "localhost"
-connection.port = 8001
+connection.port = 8080
 connection.username = "selenium_injector"
 
 connection.connect= function(){
@@ -32,33 +32,52 @@ connection.connect= function(){
     };
 
 connection.handler = function(request){
-        request = JSON.parse(request);
+        var request = JSON.parse(request);
         types.status = 200
-        try{result = types.eval(request)}catch(e){
-            result={"message":e.message,"stack":e.stack};
+        try{var result = types.eval(request)}catch(e){
+            var result={"message":e.message,"stack":e.stack};
             types.status="error"};
-        response = '{"result":'+types.stringify(result)+', "status":'+JSON.stringify(types.status)+'}';
+        var response = '{"result":'+types.stringify(result)+', "status":'+JSON.stringify(types.status)+'}';
         console.log({"request":request, "response":JSON.parse(response)});
         return response;
     }
 
 
-// perser for unsafe-eval bypass
-types = {}
+// parser for unsafe-eval bypass
+globalThis.types = {};
 
 types.eval = function(type_json){
     var defaultdict = new DefaultDict(undefined)
-    type_json = Object.assign({}, defaultdict, type_json)
+    var type_json = Object.assign({}, defaultdict, type_json)
     var type = type_json["type"];
-    if (type == "type"){var result = types.eval(type_json["type_json"])}
-    else if (type == "path"){var result = types.path(type_json["path"], type_json["obj"])}
-    else if (type == "exec"){var result = types.exec(type_json["func"], type_json["args"])}
-    else if (type == "val"){var result = type_json["val"]}
-    else if (type == "not"){var result = types.not(type_json["type_json"])}
-    else if (type == "if"){var result = types.if_else(type_json["if"],type_json["do"],type_json["else"])}
-    else if (type == "list"){var result = types.list(type_json["list"])}
-    else if (type == "dict"){var result = types.dict(type_json["dict_list"])}
-    else {reportError(TypeError("Expected type_json, but got "+types.stringify(type_json)))}
+    switch (type) {
+        case "type":
+            var result = types.eval(type_json["type_json"]);
+            break;
+        case "path":
+            var result = types.path(type_json["path"], type_json["obj"]);
+            break;
+        case "exec":
+            var result = types.exec(type_json["func"], type_json["args"]);
+            break;
+        case "val":
+            var result = type_json["val"];
+            break;
+        case "if":
+            var result = types.if_else(type_json["if"],type_json["do"],type_json["else"]);
+            break;
+        case "list":
+            var result = types.list(type_json["list"]);
+            break;
+        case "dict":
+            var result = types.dict(type_json["dict_list"]);
+            break;
+        case "op":
+            var result = types.op(type_json["op"], types.eval(type_json["a"]), types.eval(type_json["b"]));
+            break;
+        default:
+            reportError(TypeError("Expected type_json, but got "+types.stringify(type_json)));
+    }
     return result;
 }
 
@@ -71,48 +90,54 @@ types.path = function(path, obj = undefined){
 };
 
 types.exec = function(func, args=[]){
-    res_args = [];
+    var res_args = [];
     args.forEach(function (item, index) {
         res_args.push(types.eval(item))
     });
-    res_func = types.eval(func)
+    var res_func = types.eval(func)
     if (isFunction(res_func)){
         res_func(...res_args)
     }
-    else{reportError(TypeError("Expected a function, got "+types.stringify(res_func)))};
-}
+    else{
+        throw TypeError("Expected a function, got "+types.stringify(res_func))
+    };
+};
 
 types.list = function(list){
     var results = [];
-    list.forEach(function(item, index){results.push(types.eval(item))});
+    list.forEach(function(item, index){
+        results.push(types.eval(item))
+    });
     return results
-}
+};
 
 types.dict = function(dict_list){
-    res_dict = {};
+    var res_dict = {};
     dict_list.forEach(function(item) {
         res_dict[types.eval(item["key"])] = types.eval(item["val"])
     });
     return res_dict
-}
-
-types.not = function(type_json){
-    return !(types.eval(type_json))
-}
+};
 
 types.if_else = function(condition, statement, else_statement=undefined){
-    if (types.eval(condition)){result = types.eval(statement)}
+    if (types.eval(condition)){
+        var result = types.eval(statement)
+    }
     else {
-        if (else_statement == undefined){result = undefined}
-        else {result = types.eval(else_statement)}
+        if (else_statement == undefined){
+            var result = undefined
+        }
+        else {
+            var result = types.eval(else_statement)
+        }
     };
     return result
-}
+};
 
 types.stringify = function(obj){
     var result = JSON.stringify(obj, types.replacer)
     return result
-}
+};
 
 types.replacer = function replacer(key, value) {
   // Filtering out properties
@@ -120,13 +145,61 @@ types.replacer = function replacer(key, value) {
     types.status = "func_to_str"
     return value.toLocaleString();
   }
-  else if (value == undefined){return null}
-  else {return value}
+  else if (value == undefined){
+    return null
+  }
+  else {
+    return value
+  }
+};
+
+types.op = function apply_op(op, a, b) {
+      function num(x) {
+        if (typeof x != "number")
+          throw new Error("Expected number but got " + x);
+        return x;
+      }
+      function div(x) {
+        if (num(x) == 0)
+          throw new Error("Divide by zero");
+        return x;
+      }
+      switch (op) {
+        case "+":
+          return num(a) + num(b);
+        case "-":
+          return num(a) - num(b);
+        case "*":
+          return num(a) * num(b);
+        case "/":
+          return num(a) / div(b);
+        case "%":
+          return num(a) % div(b);
+        case "&&":
+          return a && b;
+        case "||":
+          return a || b;
+        case "|":
+          return a | b;
+        case "<":
+          return num(a) < num(b);
+        case ">":
+          return num(a) > num(b);
+        case "<=":
+          return num(a) <= num(b);
+        case ">=":
+          return num(a) >= num(b);
+        case "==":
+          return a == b;
+        case "!=":
+          return a != b;
+      }
+      throw new Error("Can't apply operator " + op);
 }
 
 // chrome extension libs
 
-proxy = {}
+globalThis.proxy = {}
 
 proxy.set = function(scheme,host,port, patch_webrtc = true, patch_location=true){
     proxy.config = {
@@ -177,7 +250,7 @@ proxy.clear_auth = function(urls=["<all_urls>"]){
    delete(proxy.auth_call)
 }
 
-webrtc_leak = {}
+globalThis.webrtc_leak = {}
 
 webrtc_leak.disable = function(value="disable_non_proxied_udp"){
       // https://github.com/aghorler/WebRTC-Leak-Prevent
@@ -190,7 +263,7 @@ webrtc_leak.clear = function(){
       webrtc_leak.disable("default")
 }
 
-contentsettings = {}
+globalThis.contentsettings = {}
 
 contentsettings.set = function(setting,value, urls="<all_urls>"){
     chrome.contentSettings[setting].set({"primaryPattern":urls,"setting":value}, console.log)
@@ -201,8 +274,5 @@ contentsettings.set_location = function(setting = "ask",urls="<all_urls>"){
 }
 
 
-        connection.username = "selenium_injector";
-        connection.host = "localhost";
-        connection.port = 8001;
-        connection.connect();
-        
+
+connection.connect()

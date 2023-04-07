@@ -130,3 +130,4 @@ Inspiration, code snippets, etc.
 * [cdp_event_listeners](https://stackoverflow.com/questions/66227508/selenium-4-0-0-beta-1-how-add-event-listeners-in-cdp)
 * [sync websocket server](https://stackoverflow.com/questions/68939894/implement-a-python-websocket-listener-without-async-asyncio)
 * [chrome-extension-docs](https://developer.chrome.com/docs/extensions/reference/)
+* [PEG-parser](https://github.com/pegjs/pegjs)
