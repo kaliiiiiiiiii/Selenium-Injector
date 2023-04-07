@@ -10,7 +10,10 @@ class socket(SynchronousWebsocketServer):
     def exec(self, script:dict, user:str=None, timeout:int=60):
         user = self.def_user(user=user)
         import json
-        return json.loads(self.post(json.dumps(script), user=user, timeout=timeout))
+        result = json.loads(self.post(json.dumps(script), user=user, timeout=timeout))
+        if result["status"] == "error":
+            raise Exception(result["result"]["stack"])
+        return result
 
     def exec_command(self, function:str, args: list or str or int or float or bool or None = None, timeout:int=60, user:str=None):
         user = self.def_user(user)
