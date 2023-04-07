@@ -32,7 +32,7 @@ class SynchronousWebsocketServer:
         finally:
             del self.users[user]
 
-    def recv(self, user=None, timeout=60):
+    def recv(self, user:str=None, timeout:int=60):
         import time
         user = self.def_user(user)
         for i in range(timeout * 10):
@@ -41,7 +41,7 @@ class SynchronousWebsocketServer:
                 return self.users[user]["rxqueue"].get_nowait()
             time.sleep(0.1)
 
-    def send(self, message, user=None):
+    def send(self, message:str, user:str=None):
         user = self.def_user(user)
         self.loop.run_until_complete(self.users[user]["ws"].send(message))
 
@@ -67,12 +67,12 @@ class SynchronousWebsocketServer:
         else:
             return user
 
-    def process(self, nloop=3) -> None:
+    def process(self, nloop:int=3) -> None:
         for i in range(nloop):  # Process events few times to make sure we handle events generated within the loop
             self.loop.call_soon(self.loop.stop)
             self.loop.run_forever()
 
-    def start(self, host, port) -> None:
+    def start(self, host:int, port:str) -> None:
         self.port = port
         self.host = host
         # Warning. websockets source code says that loop argument might be deprecated.

@@ -2,17 +2,17 @@ from selenium_injector.scripts.sync_websocket import SynchronousWebsocketServer
 
 
 class socket(SynchronousWebsocketServer):
-    def post(self, message, timeout=60, user=None):
+    def post(self, message:str, timeout:int=60, user:str=None):
         user = self.def_user(user)
         self.send(message=message, user=user)
         return self.recv(user=user, timeout=timeout)
 
-    def exec(self, script, user=None, timeout=60):
+    def exec(self, script:dict, user:str=None, timeout:int=60):
         user = self.def_user(user=user)
         import json
         return json.loads(self.post(json.dumps(script), user=user, timeout=timeout))
 
-    def exec_command(self, function, args: list or str or int or float or bool or None = None, timeout=60, user=None):
+    def exec_command(self, function:str, args: list or str or int or float or bool or None = None, timeout:int=60, user:str=None):
         user = self.def_user(user)
         parsed_args = []
         arg_type = type(args)

@@ -7,7 +7,7 @@ def sel_injector_path():
     return os.path.dirname(selenium_injector.__file__) + "/"
 
 
-def read(filename: str, encoding: str = "utf-8", sel_root=True):
+def read(filename: str, encoding: str = "utf-8", sel_root: bool = True):
     if sel_root:
         path = sel_injector_path() + filename
     else:
@@ -16,7 +16,7 @@ def read(filename: str, encoding: str = "utf-8", sel_root=True):
         return f.read()
 
 
-def write(filename: str, content: str, encoding: str = "utf-8", sel_root=True):
+def write(filename: str, content: str, encoding: str = "utf-8", sel_root: bool = True):
     if sel_root:
         path = sel_injector_path() + filename
     else:
@@ -25,12 +25,12 @@ def write(filename: str, content: str, encoding: str = "utf-8", sel_root=True):
         return f.write(content)
 
 
-def read_json(filename: str = 'example.json', encoding: str = "utf-8", sel_root=True):
+def read_json(filename: str = 'example.json', encoding: str = "utf-8", sel_root: bool = True):
     if sel_root:
         path = sel_injector_path() + filename
     else:
         path = filename
-    with open(sel_injector_path() + filename, 'r', encoding=encoding) as f:
+    with open(path, 'r', encoding=encoding) as f:
         return json.load(f)
 
 
