@@ -102,6 +102,7 @@ Please feel free to open an issue or fork!
 - [ ] add events
 - [x] types.eval
   - [ ] for-loops
+  - [ ] async execution
 - [x] authentificaten proxies
   - [x] manage webrtc-leak
   - [x] manage locatiom api leak
