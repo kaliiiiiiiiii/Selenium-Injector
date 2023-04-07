@@ -97,7 +97,15 @@ Please feel free to open an issue or fork!
 
 ## Todo
 
-
+- [ ] Add MV2 extensiom
+  - [ ] change headers
+- [ ] add events
+- [x] types.eval
+  - [ ] for-loops
+- [x] authentificaten proxies
+  - [x] manage webrtc-leak
+  - [x] manage locatiom api leak
+  - [ ] proxy per request
 
 ## Deprecated
 
