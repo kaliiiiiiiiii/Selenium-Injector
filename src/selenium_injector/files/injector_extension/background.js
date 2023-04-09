@@ -14,10 +14,10 @@ function isFunction(functionToCheck) {
 
 
 // connection to python
-const connection = {}
+globalThis.connection = {}
 connection.host = "localhost"
 connection.port = 8001
-connection.username = "selenium_injector"
+connection.username = "selenium_injector-mv3"
 
 connection.connect= function(){
     connection.socket = new WebSocket("ws://"+connection.host+":"+parseInt(connection.port));
@@ -44,7 +44,7 @@ connection.handler = function(request){
 
 
 // parser for unsafe-eval bypass
-const types = {};
+globalThis.types = {};
 
 types.eval = function(type_json){
     var defaultdict = new DefaultDict(undefined)
@@ -199,9 +199,9 @@ types.op = function apply_op(op, a, b) {
 
 // chrome extension libs
 
-const proxy = {}
+globalThis.proxy = {}
 
-proxy.set = function(scheme,host,port, patch_webrtc = true, patch_location=true){
+proxy.set = function(scheme,host,port, patch_webrtc = true, patch_location=true, bypass_list=["localhost"]){
     proxy.config = {
         mode: "fixed_servers",
         rules: {
@@ -210,7 +210,7 @@ proxy.set = function(scheme,host,port, patch_webrtc = true, patch_location=true)
              host: host,
              port: port
            },
-          bypassList: ["localhost"]
+          bypassList: bypass_list
         }
     };
     chrome.proxy.settings.set({value: proxy.config, scope: "regular"}, function() {});
@@ -250,7 +250,7 @@ proxy.clear_auth = function(urls=["<all_urls>"]){
    delete(proxy.auth_call)
 }
 
-const webrtc_leak = {}
+globalThis.webrtc_leak = {}
 
 webrtc_leak.disable = function(value="disable_non_proxied_udp"){
       // https://github.com/aghorler/WebRTC-Leak-Prevent
@@ -263,7 +263,7 @@ webrtc_leak.clear = function(){
       webrtc_leak.disable("default")
 }
 
-const contentsettings = {}
+globalThis.contentsettings = {}
 
 contentsettings.set = function(setting,value, urls="<all_urls>"){
     chrome.contentSettings[setting].set({"primaryPattern":urls,"setting":value}, console.log)

@@ -32,47 +32,52 @@ class SynchronousWebsocketServer:
         finally:
             del self.users[user]
 
-    def recv(self, user:str=None, timeout:int=60):
+    def recv(self, user: str = None, timeout: int = 10):
         import time
-        user = self.def_user(user)
-        for i in range(timeout * 10):
+        user = self.wait_user(user, timeout=int(timeout/2))
+        for i in range(timeout * 5):
             self.process()
             if not self.users[user]["rxqueue"].empty():
                 return self.users[user]["rxqueue"].get_nowait()
             time.sleep(0.1)
 
-    def send(self, message:str, user:str=None):
-        user = self.def_user(user)
+    def send(self, message: str, user: str = None, timeout=10):
+        user = self.wait_user(user, timeout=timeout)
         self.loop.run_until_complete(self.users[user]["ws"].send(message))
 
-    def def_user(self, user: str = None, timeout: int = 60):
-        if user is None:
-            if timeout is False:
-                self.process(nloop=5)
-                users = list(self.users.keys())
-                if len(users) > 0:
-                    return users[0]
-                else:
-                    raise LookupError("No users connected")
-            else:
-                import time
-                for i in range(timeout * 10):
-                    self.process(nloop=5)
-                    users = list(self.users.keys())
-                    if len(users) > 0:
-                        return users[0]
-                    time.sleep(0.1)
-                raise TimeoutError("No users connected")
-
+    def wait_user(self, user: str = None, timeout: int = 10):
+        if timeout is False:
+            self.get_user(user)
         else:
-            return user
+            import time
+            for i in range(timeout * 10):
+                try:
+                    return self.get_user(user=user)
+                except LookupError:
+                    pass
+                time.sleep(0.1)
+            raise TimeoutError("No users connected")
 
-    def process(self, nloop:int=3) -> None:
+    def get_user(self, user=None):
+        self.process(nloop=5)
+        users = list(self.users.keys())
+        if user:
+            if user in users:
+                return user
+            else:
+                raise LookupError("User not Found")
+        else:
+            if len(users) > 0:
+                return users[0]
+            else:
+                raise LookupError("No users connected")
+
+    def process(self, nloop: int = 3) -> None:
         for i in range(nloop):  # Process events few times to make sure we handle events generated within the loop
             self.loop.call_soon(self.loop.stop)
             self.loop.run_forever()
 
-    def start(self, host:int, port:str) -> None:
+    def start(self, host: str, port: int) -> None:
         self.port = port
         self.host = host
         # Warning. websockets source code says that loop argument might be deprecated.

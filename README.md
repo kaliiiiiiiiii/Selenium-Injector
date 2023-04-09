@@ -25,7 +25,7 @@
 from selenium_profiles import driver as mydriver
 from selenium_profiles.profiles import profiles
 
-from selenium_injector.injector import injector
+from selenium_injector.injector import mv3_injector as injector
 
 injector = injector()
 
@@ -37,11 +37,10 @@ driver = mydriver.start(profile, uc_driver=False)
 
 
 input("Enable proxy\n")
-injector.exec_command("proxy.set", ["http", "host", 41149])
-injector.exec_command("proxy.set_auth", ["username", "password"])
+injector.proxy.set("host", 41149, scheme="http", username="username",password="password")
 
 input("Disable proxy\n")
-injector.exec_command("proxy.clear")
+injector.proxy.clear()
 
 input("Press ENTER to quit")
 injector.stop()
@@ -54,39 +53,38 @@ in the End. Else-wise your temporary folder will get flooded! and it keeps runni
 ### Change proxy while running
 
 ```python
-from selenium_injector.injector import injector
+from selenium_injector.injector import mv3_injector as injector
 injector = injector(host="localhost", port = 8001)
 
 # initialize chrome here & load the extension
 # options.add_argument("--load-extension="+injector.path) # as argument
 # profile["options"]["extensions"] = {"extension_paths": [injector.path]} # selenium-profiles
 
-injector.exec_command("proxy.set", ["http", "host", 41149, True, True]) # patch_webrtc = True, patch_location=True by default
-injector.exec_command("proxy.set_auth", ["username", "password"])
+injector.proxy.set("host", 41149, scheme="http", username="username",password="password") # patch_webrtc = True, patch_location=True by default
 
 input("Disable proxy\n")
-injector.exec_command("proxy.clear")
+injector.proxy.clear()
 ```
 
 ### Disable webrtc-ip-leak
 ```python
-from selenium_injector.injector import injector
+from selenium_injector.injector import mv3_injector as injector
 injector = injector()
 
 # initialize chrome here & load the extension here
 
-injector.exec_command("webrtc_leak.disable")
-injector.exec_command("webrtc_leak.clear") # reset webrtc
+injector.webrtc_leak.disable()
+injector.webrtc_leak.clear() # reset webrtc
 ```
 ### block location api
 ```python
-from selenium_injector.injector import injector
+from selenium_injector.injector import mv3_injector as injector
 injector = injector()
 
 # initialize chrome here & load the extension here
 
-injector.exec_command("contentsettings.set_location", ["block"])
-injector.exec_command("contentsettings.set_location", ["allow"]) # reset api policies
+injector.contentsettings.set_location(setting="ask")
+injector.contentsettings.set_location(setting="allow")# reset api policies
 ```
 
 for all available scripts, have a look at [selenium_injector/files/injector_extension/background.js](https://github.com/kaliiiiiiiiii/Selenium-Injector/blob/master/src/selenium_injector/files/injector_extension/background.js)
