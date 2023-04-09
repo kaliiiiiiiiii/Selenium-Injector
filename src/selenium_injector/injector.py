@@ -80,7 +80,7 @@ class mv3_injector:
         def __init__(self, socket, user):
             self.supported_location_settings = ["ask", "allow", "block"]
             self.supported_settings = ["automaticDownloads", "autoVerify", "camera", "cookies", "fullscreen", "images",
-                                       "javascript", "location","microphone", "mouselock", "notifications", "plugins",
+                                       "javascript", "location", "microphone", "mouselock", "notifications", "plugins",
                                        "popups", "unsandboxedPlugins"]
             super().__init__(socket, user)
 

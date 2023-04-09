@@ -20,7 +20,11 @@ class SynchronousWebsocketServer:
 
     # Executed for each websocket
     async def server_routine(self, websocket, path):
-        user = await websocket.recv()
+        # noinspection PyUnresolvedReferences
+        try:
+            user = await websocket.recv()
+        except websockets.exceptions.ConnectionClosedError:
+            return
         self.users[user] = {"ws": websocket, "rxqueue": queue.Queue()}
 
         # noinspection PyUnresolvedReferences
