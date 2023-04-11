@@ -22,18 +22,18 @@
 ### Example script
 
 ```python
-from selenium_profiles import driver as mydriver
+from selenium_profiles.webdriver import Chrome
 from selenium_profiles.profiles import profiles
 
 from selenium_injector.injector import mv3_injector as injector
 
 injector = injector()
 
-mydriver = mydriver()
 profile = profiles.Windows()
-profile["options"]["extensions"] = {"extension_paths": [injector.path]}
+profile["options"]["extension_paths"] = [injector.path]
 
-driver = mydriver.start(profile, uc_driver=False)
+mydriver = Chrome(profile,uc_driver=False)
+driver = mydriver.start()
 
 
 input("Enable proxy\n")
@@ -58,7 +58,7 @@ injector = injector(host="localhost", port = 8001)
 
 # initialize chrome here & load the extension
 # options.add_argument("--load-extension="+injector.path) # as argument
-# profile["options"]["extensions"] = {"extension_paths": [injector.path]} # selenium-profiles
+# profile["options"]["extension_paths"] = [injector.path] # selenium-profiles
 
 injector.proxy.set("host", 41149, scheme="http", username="username",password="password") # patch_webrtc = True, patch_location=True by default
 
