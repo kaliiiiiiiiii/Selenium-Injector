@@ -42,7 +42,6 @@ connection.handler = function(request){
         return response;
     }
 
-
 // parser for unsafe-eval bypass
 globalThis.types = {};
 

@@ -9,9 +9,14 @@ class base_injector:
 
 
 class mv3_injector:
-    def __init__(self, port: int = 8001, host: str = "localhost", user="selenium-injector-mv3"):
+    def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3"):
         from selenium_injector.scripts.socket import socket
-        from selenium_injector.utils.utils import read, write, sel_injector_path
+        from selenium_injector.utils.utils import read, write, sel_injector_path, random_port
+
+        if not port:
+            port = random_port(host=host)
+        if not host:
+            host = "localhost"
 
         self.user = user
         background_js = read("files/injector_extension/background.js")

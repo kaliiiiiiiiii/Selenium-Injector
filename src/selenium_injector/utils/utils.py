@@ -1,6 +1,8 @@
 import json
 import os
 import selenium_injector
+import socket
+from contextlib import closing
 
 
 def sel_injector_path():
@@ -41,3 +43,12 @@ def write_json(obj: dict or list, filename: str = "out.json", encoding: str = "u
         path = filename
     with open(path, "w", encoding=encoding) as outfile:
         outfile.write(json.dumps(obj))
+
+
+def random_port(host: int = None):
+    if not host:
+        host = ''
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind((host, 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
