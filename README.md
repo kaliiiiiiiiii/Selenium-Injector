@@ -105,7 +105,12 @@ Please feel free to open an issue or fork!
   - [x] manage webrtc-leak
   - [x] manage locatiom api leak
   - [ ] proxy per request
-
+- [ ] add `chrome.scripting` support
+- [ ] add automation tools
+  - [ ] click
+  - [ ] send_keys
+  - [ ] find_element
+    - [ ] by XPATH
 ## Deprecated
 
 ## Authors
