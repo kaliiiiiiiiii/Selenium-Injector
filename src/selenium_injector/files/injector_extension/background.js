@@ -24,22 +24,28 @@ connection.connect= function(){
       connection.socket.addEventListener("open", (event) => {
         connection.socket.send(connection.username);
         connection.socket.addEventListener("message", (event) => {
-            connection.socket.send(connection.handler(event.data))
+            connection.handler(event.data)
             });
         });
       connection.socket.addEventListener("error", (event) => {connection.connect()});
       connection.socket.addEventListener("close", (event) => {connection.connect()});
     };
 
+connection.send_back = function(result, status=200){
+    var response = '{"result":'+types.stringify(result)+', "status":'+JSON.stringify(types.status)+'}';
+    console.log({"response":JSON.parse(response)});
+    connection.socket.send(response)
+}
+
 connection.handler = function(request){
         var request = JSON.parse(request);
+        console.log({"request":request})
+        var not_return = request["not_return"]
         types.status = 200
         try{var result = types.eval(request)}catch(e){
             var result={"message":e.message,"stack":e.stack};
             types.status="error"};
-        var response = '{"result":'+types.stringify(result)+', "status":'+JSON.stringify(types.status)+'}';
-        console.log({"request":request, "response":JSON.parse(response)});
-        return response;
+        if(!(not_return)){connection.send_back(result, types.status)}
     }
 
 // parser for unsafe-eval bypass

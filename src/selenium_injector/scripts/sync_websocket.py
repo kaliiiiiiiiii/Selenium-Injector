@@ -44,6 +44,7 @@ class SynchronousWebsocketServer:
             if not self.users[user]["rxqueue"].empty():
                 return self.users[user]["rxqueue"].get_nowait()
             time.sleep(0.1)
+        raise TimeoutError(f"Didn't get a response within {timeout} seconds")
 
     def send(self, message: str, user: str = None, timeout=10):
         user = self.wait_user(user, timeout=timeout)

@@ -38,6 +38,7 @@ class mv3_injector:
         self.proxy = self.proxy(socket=self.socket, user=self.user)
         self.webrtc_leak = self.webrtc_leak(socket=self.socket, user=self.user)
         self.contentsettings = self.contentsettings(socket=self.socket, user=self.user)
+        self.tabs = self.tabs(socket=self.socket, user=self.user)
 
     class proxy(base_injector):
         def __init__(self, socket, user):
@@ -96,3 +97,11 @@ class mv3_injector:
         def set_location(self, setting="ask", urls="<all_urls>", timeout=10):
             self.check_cmd(setting, self.supported_location_settings)
             self.socket.exec_command("contentsettings.set_location", [setting, urls], timeout=timeout, user=self.user)
+
+    class tabs(base_injector):
+        def query(self, query=None):
+            if not query:
+                query = {}
+            return self.socket.exec_async(script={"type": "exec", "func": {"type": "path", "path": "chrome.tabs.query"},
+                                                  "args": [{"type": "val", 'val': query}, self.socket.send_back]
+                                                  })
