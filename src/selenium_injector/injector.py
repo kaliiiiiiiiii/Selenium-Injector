@@ -125,5 +125,5 @@ class mv3_injector:
         def active_tab(self):
             try:
                 return self.query({"active": True, "lastFocusedWindow": True})["result"][0][0]
-            except KeyError:
+            except IndexError:
                 return None
