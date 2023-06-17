@@ -1,3 +1,31 @@
+// Forcing service worker to stay alive by sending a "ping" to a port where noone is listening
+// Essentially it prevents SW to fall asleep after the first 30 secs of work.
+
+    const INTERNAL_STAYALIVE_PORT = "Whatever_Port_Name_You_Want"
+    var alivePort = null;
+    StayAlive();
+
+    async function StayAlive() {
+    var lastCall = Date.now();
+    var wakeup = setInterval( () => {
+
+        const now = Date.now();
+        const age = now - lastCall;
+
+        if (alivePort == null) {
+            alivePort = chrome.runtime.connect({name:INTERNAL_STAYALIVE_PORT})
+
+            alivePort.onDisconnect.addListener( (p) => {
+                alivePort = null;
+            });
+        }
+
+        if (alivePort) {
+            alivePort.postMessage({content: "ping"});
+        }
+    }, 25000);
+}
+
 // structs
 
 class DefaultDict {
@@ -31,8 +59,8 @@ connection.connect= function(){
       connection.socket.addEventListener("close", (event) => {connection.connect()});
     };
 
-connection.send_back = function(result, status=200){
-    var response = '{"result":'+types.stringify(result)+', "status":'+JSON.stringify(types.status)+'}';
+connection.send_back = function(...results){
+    var response = '{"result":'+types.stringify(results)+', "status":'+JSON.stringify(types.status)+'}';
     console.log({"response":JSON.parse(response)});
     connection.socket.send(response)
 }
@@ -40,12 +68,12 @@ connection.send_back = function(result, status=200){
 connection.handler = function(request){
         var request = JSON.parse(request);
         console.log({"request":request})
-        var not_return = request["not_return"]
+        connection.not_return = request["not_return"]
         types.status = 200
         try{var result = types.eval(request)}catch(e){
             var result={"message":e.message,"stack":e.stack};
             types.status="error"};
-        if(!(not_return)){connection.send_back(result, types.status)}
+        if(!(connection.not_return)){connection.send_back(result)}
     }
 
 // parser for unsafe-eval bypass
@@ -221,6 +249,11 @@ proxy.set = function(scheme,host,port, patch_webrtc = true, patch_location=true,
     chrome.proxy.settings.set({value: proxy.config, scope: "regular"}, function() {});
     if (patch_webrtc){webrtc_leak.disable();};
     if(patch_location){contentsettings.set_location("block")}
+}
+
+proxy.get = function(){
+    connection.not_return = true;
+    chrome.proxy.settings.get({'incognito': false}, connection.send_back);
 }
 
 proxy.clear = function(clear_webrtc=true, clear_location=true){

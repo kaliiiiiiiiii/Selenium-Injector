@@ -143,3 +143,4 @@ Inspiration, code snippets, etc.
 * [sync websocket server](https://stackoverflow.com/questions/68939894/implement-a-python-websocket-listener-without-async-asyncio)
 * [chrome-extension-docs](https://developer.chrome.com/docs/extensions/reference/)
 * [PEG-parser](https://github.com/pegjs/pegjs)
+* [make-SV-stayalive](https://stackoverflow.com/a/75082732/20443541)

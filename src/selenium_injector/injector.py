@@ -45,6 +45,17 @@ class mv3_injector:
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
             super().__init__(socket, user=user)
 
+        @property
+        def rules(self):
+            try:
+                return self.socket.exec_command("proxy.get")["result"][0]["value"]["rules"]
+            except KeyError:
+                return None
+
+        @property
+        def mode(self):
+            return self.socket.exec_command("proxy.get")["result"][0]["value"]["mode"]
+
         # noinspection PyDefaultArgument
         def set(self, host: str, port: int, scheme: str = "http", patch_webrtc: bool = True,
                 patch_location: bool = True, bypass_list: list = ["localhost"],
@@ -105,3 +116,14 @@ class mv3_injector:
             return self.socket.exec_async(script={"type": "exec", "func": {"type": "path", "path": "chrome.tabs.query"},
                                                   "args": [{"type": "val", 'val': query}, self.socket.send_back]
                                                   })
+
+        @property
+        def all_tabs(self):
+            return self.query()["result"][0]
+
+        @property
+        def active_tab(self):
+            try:
+                return self.query({"active": True, "lastFocusedWindow": True})["result"][0][0]
+            except KeyError:
+                return None
