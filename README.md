@@ -76,19 +76,20 @@ Please feel free to open an issue or fork!
 - [ ] Add MV2 extension
   - [ ] change headers
 - [ ] add events
+  - [ ] make protocoll use `UUIDS`'s
 - [x] types.eval
   - [ ] for-loops
   - [x] async execution
 - [x] authentificaten proxies
   - [x] manage webrtc-leak
-  - [x] manage locatiom api leak
+  - [x] manage location api leak
   - [ ] proxy per request
 - [ ] add `chrome.scripting` support
 - [ ] add automation tools
-  - [ ] click
+  - [x] click
   - [ ] send_keys
   - [ ] find_element
-    - [ ] by XPATH
+    - [x] by XPATH
 ## Deprecated
 
 ## Authors
