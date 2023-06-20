@@ -90,6 +90,10 @@ Please feel free to open an issue or fork!
   - [ ] send_keys
   - [ ] find_element
     - [x] by XPATH
+- [ ] undetectability
+  - [x] make tab scripts private
+  - [x] support base_driver argument
+  - [ ] make `/files/js/utils.js` private
 ## Deprecated
 
 ## Authors
