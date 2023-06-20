@@ -1,7 +1,7 @@
 # Selenium-Injector
 
 * Change proxy while running (auth supported)
-* remotely execute functions within a Chrome-Extension
+* remotely contoll Chrome using websockets and extensions
 
 ### Feel free to test my code!
 
@@ -19,75 +19,50 @@
 * ```pip install selenium_injector```
 
 
-### Example script
+### Example scripts
 
+
+#### click on element
 ```python
-from selenium_profiles.webdriver import Chrome
-from selenium_profiles.profiles import profiles
+from selenium_injector.webdriver import Chrome
+driver = Chrome()
 
-from selenium_injector.injector import mv3_injector as injector
+driver.get("https://www.wikipedia.org/")
+driver.driverless.socket.exec_command("utils.find_element.ByXpath", '//*[@id="js-link-box-en"]/strong', user=driver.driverless.tab_user)
 
-injector = injector()
+js = driver.driverless.socket.js
+t = js.types
+u = js.utils
 
-profile = profiles.Windows()
-profile["options"]["extension_paths"] = [injector.path]
+try:
+    prev_url = driver.current_url[:]
+    driver.driverless.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.driverless.tab_user, timeout=2)
+except TimeoutError as e:
+    # noinspection PyUnboundLocalVariable
+    if driver.current_url != prev_url:
+        pass
+    else:
+        raise e
 
-mydriver = Chrome(profile,uc_driver=False)
-driver = mydriver.start()
-
-
-input("Enable proxy\n")
-injector.proxy.set("host", 41149, scheme="http", username="username",password="password")
-
-input("Disable proxy\n")
-injector.proxy.clear()
-
-input("Press ENTER to quit")
-injector.stop()
 driver.quit()
 ```
 Don't forget to execute
 `driver.quit()`
 in the End. Else-wise your temporary folder will get flooded! and it keeps running
 
-### Change proxy while running
-
+#### set proxy dynamically
 ```python
-from selenium_injector.injector import mv3_injector as injector
-injector = injector(host="localhost", port = 8001)
+from selenium_injector.webdriver import Chrome
+driver = Chrome()
 
-# initialize chrome here & load the extension
-# options.add_argument("--load-extension="+injector.path) # as argument
-# profile["options"]["extension_paths"] = [injector.path] # selenium-profiles
+driver.driverless.proxy.set(host="example_host.com", port=143, password="password", username="user-1")
 
-injector.proxy.set("host", 41149, scheme="http", username="username",password="password") # patch_webrtc = True, patch_location=True by default
+driver.get("https://whatismyipaddress.com/")
 
-input("Disable proxy\n")
-injector.proxy.clear()
+driver.driverless.proxy.clear()
+driver.quit()
 ```
 
-### Disable webrtc-ip-leak
-```python
-from selenium_injector.injector import mv3_injector as injector
-injector = injector()
-
-# initialize chrome here & load the extension here
-
-injector.webrtc_leak.disable()
-injector.webrtc_leak.clear() # reset webrtc
-```
-### block location api
-```python
-from selenium_injector.injector import mv3_injector as injector
-injector = injector()
-
-# initialize chrome here & load the extension here
-
-injector.contentsettings.set_location(setting="ask")
-injector.contentsettings.set_location(setting="allow")# reset api policies
-```
-
-for all available scripts, have a look at [selenium_injector/files/injector_extension/background.js](https://github.com/kaliiiiiiiiii/Selenium-Injector/blob/master/src/selenium_injector/files/injector_extension/background.js)
 
 ## Help
 

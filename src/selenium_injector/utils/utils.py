@@ -45,7 +45,7 @@ def write_json(obj: dict or list, filename: str = "out.json", encoding: str = "u
         outfile.write(json.dumps(obj))
 
 
-def random_port(host: int = None):
+def random_port(host: str = None):
     if not host:
         host = ''
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:

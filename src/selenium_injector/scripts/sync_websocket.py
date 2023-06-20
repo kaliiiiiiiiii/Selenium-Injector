@@ -34,7 +34,10 @@ class SynchronousWebsocketServer:
         except websockets.exceptions.ConnectionClosedError:
             pass
         finally:
-            del self.users[user]
+            try:
+                del self.users[user]
+            except KeyError:
+                pass
 
     def recv(self, user: str = None, timeout: int = 10):
         import time
@@ -43,6 +46,7 @@ class SynchronousWebsocketServer:
             self.process()
             if not self.users[user]["rxqueue"].empty():
                 return self.users[user]["rxqueue"].get_nowait()
+            self.wait_user(user, timeout=int(timeout / 2))
             time.sleep(0.1)
         raise TimeoutError(f"Didn't get a response within {timeout} seconds")
 
@@ -61,7 +65,7 @@ class SynchronousWebsocketServer:
                 except LookupError:
                     pass
                 time.sleep(0.1)
-            raise TimeoutError("No users connected")
+            raise TimeoutError("User not connected")
 
     def get_user(self, user=None):
         self.process(nloop=5)

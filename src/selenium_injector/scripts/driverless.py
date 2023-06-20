@@ -1,4 +1,4 @@
-class base_injector:
+class base_driver:
     def __init__(self, socket, user: str):
         self.socket = socket
         self.user = user
@@ -8,7 +8,7 @@ class base_injector:
             raise ValueError("Expected " + str(values) + " , but got" + str(value))
 
 
-class mv3_injector:
+class Driverless:
     def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3"):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import read, write, sel_injector_path, random_port
@@ -19,15 +19,17 @@ class mv3_injector:
             port = random_port(host=host)
 
         self.user = user
-        background_js = read("files/injector_extension/background.js")
-        config = """
-        connection.username = "%s";
-        connection.host = "%s";
-        connection.port = %s;
+
+        self.config = f"""
+        var connection = new connector("{host}", {port}, "{self.user}")
         connection.connect();
-        """ % (self.user, host, str(port))
+        """
         self.path = sel_injector_path() + "files/tmp/injector_extension"
-        write(self.path + "/background.js", background_js + config, sel_root=False)
+
+        self.background_js = read("files/extension/background.js")
+        self.connection_js = read("files/js/connection.js")
+        write(self.path + "/background.js", self.background_js + self.connection_js + self.config, sel_root=False)
+
         self.socket = socket()
         self.socket.start(port=port, host=host)
         self.stop = self.socket.stop
@@ -40,7 +42,11 @@ class mv3_injector:
         self.contentsettings = self.contentsettings(socket=self.socket, user=self.user)
         self.tabs = self.tabs(socket=self.socket, user=self.user)
 
-    class proxy(base_injector):
+    @property
+    def page_source(self):
+        return self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"), user="tab-0")["result"][0]
+
+    class proxy(base_driver):
         def __init__(self, socket, user):
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
             super().__init__(socket, user=user)
@@ -48,13 +54,13 @@ class mv3_injector:
         @property
         def rules(self):
             try:
-                return self.socket.exec_command("proxy.get")["result"][0]["value"]["rules"]
+                return self.socket.exec_command("proxy.get",user=self.user)["result"][0]["value"]["rules"]
             except KeyError:
                 return None
 
         @property
         def mode(self):
-            return self.socket.exec_command("proxy.get")["result"][0]["value"]["mode"]
+            return self.socket.exec_command("proxy.get",user=self.user)["result"][0]["value"]["mode"]
 
         # noinspection PyDefaultArgument
         def set(self, host: str, port: int, scheme: str = "http", patch_webrtc: bool = True,
@@ -80,7 +86,7 @@ class mv3_injector:
         def clear(self, clear_webrtc=True, clear_location=True, timeout=10):
             self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=timeout, user=self.user)
 
-    class webrtc_leak(base_injector):
+    class webrtc_leak(base_driver):
         def __init__(self, socket, user):
             self.supported_values = ["default", "default_public_and_private_interfaces",
                                      "default_public_interface_only", "disable_non_proxied_udp"]
@@ -93,7 +99,7 @@ class mv3_injector:
         def clear(self, timeout=10):
             self.socket.exec_command("webrtc_leak.clear", timeout=timeout, user=self.user)
 
-    class contentsettings(base_injector):
+    class contentsettings(base_driver):
         def __init__(self, socket, user):
             self.supported_location_settings = ["ask", "allow", "block"]
             self.supported_settings = ["automaticDownloads", "autoVerify", "camera", "cookies", "fullscreen", "images",
@@ -109,13 +115,13 @@ class mv3_injector:
             self.check_cmd(setting, self.supported_location_settings)
             self.socket.exec_command("contentsettings.set_location", [setting, urls], timeout=timeout, user=self.user)
 
-    class tabs(base_injector):
+    class tabs(base_driver):
         def query(self, query=None):
             if not query:
                 query = {}
             return self.socket.exec_async(script={"type": "exec", "func": {"type": "path", "path": "chrome.tabs.query"},
                                                   "args": [{"type": "val", 'val': query}, self.socket.send_back]
-                                                  })
+                                                  }, user=self.user)
 
         @property
         def all_tabs(self):

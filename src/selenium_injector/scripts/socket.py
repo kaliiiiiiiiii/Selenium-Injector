@@ -1,9 +1,11 @@
 from selenium_injector.scripts.sync_websocket import SynchronousWebsocketServer
+from selenium_injector.scripts.js import JS
 
 
 class socket(SynchronousWebsocketServer):
     def __init__(self):
-        self.send_back = {"type": "path", "path": "connection.send_back"}
+        self.js = JS()
+        self.send_back = self.js.types.send_back()
         self.not_return = {"not_return":True}
         super().__init__()
 
@@ -18,7 +20,7 @@ class socket(SynchronousWebsocketServer):
         result = self.post(json.dumps(script), user=user, timeout=timeout)
         result = json.loads(result)
         if result["status"] == "error":
-            raise Exception(result["result"]["stack"])
+            raise Exception(result["result"][0]["stack"])
         return result
 
     def exec_async(self, script: dict, user: str = None, timeout: int = 10):

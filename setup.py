@@ -10,7 +10,7 @@ setuptools.setup(
     name='selenium_injector',
     author='Aurin Aegerter',
     author_email='aurinliun@gmx.ch',
-    description='Remote controll a chrome extension',
+    description='inject javascript into chrome',
     keywords='Selenium,interception, proxy, webautomation',
     long_description=long_description,
     long_description_content_type='text/markdown',
