@@ -43,9 +43,8 @@ try:
     prev_url = driver.current_url[:]
     driver.driverless.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.driverless.tab_user, timeout=2)
 except TimeoutError as e:
-    # noinspection PyUnboundLocalVariable
     if driver.current_url != prev_url:
-        pass
+        pass # script got killed before send_response
     else:
         raise e
 
