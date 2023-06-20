@@ -44,8 +44,11 @@ class SynchronousWebsocketServer:
         user = self.wait_user(user, timeout=int(timeout/2))
         for i in range(timeout * 5):
             self.process()
-            if not self.users[user]["rxqueue"].empty():
-                return self.users[user]["rxqueue"].get_nowait()
+            try:
+                if not self.users[user]["rxqueue"].empty():
+                    return self.users[user]["rxqueue"].get_nowait()
+            except KeyError:
+                pass # user not connected atm
             self.wait_user(user, timeout=int(timeout / 2))
             time.sleep(0.1)
         raise TimeoutError(f"Didn't get a response within {timeout} seconds")

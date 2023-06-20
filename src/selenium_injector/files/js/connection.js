@@ -213,7 +213,3 @@ op(op, a, b) {
 }
 
 } //end connector class
-
-
-
-// connector.connect()

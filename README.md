@@ -25,7 +25,10 @@
 #### click on element
 ```python
 from selenium_injector.webdriver import Chrome
-driver = Chrome()
+# from selenium.webdriver import Chrome as base_driver
+from undetected_chromedriver import Chrome as base_driver
+
+driver = Chrome(base_driver=base_driver)
 
 driver.get("https://www.wikipedia.org/")
 driver.driverless.socket.exec_command("utils.find_element.ByXpath", '//*[@id="js-link-box-en"]/strong', user=driver.driverless.tab_user)
