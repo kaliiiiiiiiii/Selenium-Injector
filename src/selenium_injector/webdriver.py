@@ -8,11 +8,16 @@ class Chrome(BaseDriver):
     # noinspection PyDefaultArgument
     def __init__(self, driverless_options={"port": None, "host": None}, base_drivers: tuple = None, **kwargs):
 
+        if not base_drivers:
+            base_drivers = tuple()
+
         if len(base_drivers) > 1:
             warnings.warn(
                 "More than one base_driver might not initialize correctly, seems buggy.\n Also, you might try different order")
         if (len(base_drivers) == 1) and (base_drivers[0] == Chrome.__base__):
             pass  # got selenium.webdriver.Chrome as BaseDriver
+        elif not base_drivers:
+            pass
         else:
             Chrome.__bases__ = base_drivers
 
