@@ -1,19 +1,20 @@
 from selenium.webdriver import ChromeOptions
 from selenium_injector.scripts.driverless import Driverless
+from selenium.webdriver import Chrome as BaseDriver
+import warnings
 
 
-class Base:
-    pass
-
-
-class Chrome(Base):
+class Chrome(BaseDriver):
     # noinspection PyDefaultArgument
-    def __init__(self, driverless_options={"port": None, "host": None}, base_driver=None, **kwargs):
+    def __init__(self, driverless_options={"port": None, "host": None}, base_drivers: tuple = None, **kwargs):
 
-        if not base_driver:
-            from selenium.webdriver import Chrome as base_driver
-
-        Chrome.__bases__ = (Chrome.__base__, base_driver,)
+        if len(base_drivers) > 1:
+            warnings.warn(
+                "More than one base_driver might not initialize correctly, seems buggy.\n Also, you might try different order")
+        if (len(base_drivers) == 1) and (base_drivers[0] == Chrome.__base__):
+            pass  # got selenium.webdriver.Chrome as BaseDriver
+        else:
+            Chrome.__bases__ = base_drivers
 
         port = driverless_options["port"]
         host = driverless_options["host"]
