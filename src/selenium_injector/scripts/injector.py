@@ -68,11 +68,18 @@ class Injector:
         def mode(self):
             return self.socket.exec_command("proxy.get", user=self.user)["result"][0]["value"]["mode"]
 
-        # noinspection PyDefaultArgument
-        def set(self, host: str, port: int, scheme: str = "http", patch_webrtc: bool = True,
-                patch_location: bool = True, bypass_list: list = ["localhost"],
-                username: str = None, password: str = None,
-                timeout=10):
+        @property
+        def auth(self):
+            return self.socket.exec(self.socket.js.types.path("proxy.credentials"))["result"][0]
+
+        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True):
+            self.socket.exec_command("proxy.set", [config, patch_webrtc, patch_location],
+                                     timeout=10, user=self.user)
+
+        def set_single(self, host: str, port: int, scheme: str = "http", patch_webrtc: bool = True,
+                       patch_location: bool = True,
+                       username: str = None, password: str = None,
+                       timeout=10):
 
             self.check_cmd(scheme, self.supported_schemes)
             # auth
@@ -82,15 +89,24 @@ class Injector:
             elif username or password:
                 raise ValueError("For authentification, username and password need to get specified, only got one")
 
-            self.socket.exec_command("proxy.set", [scheme, host, port, patch_webrtc, patch_location, bypass_list],
-                                     timeout=10, user=self.user)
+            config = {"mode": "fixed_servers", "rules": {
+                "singleProxy": {"host": host, "port": port, "scheme": scheme},
+                "bypassList": ["localhost"]
+            }}
+
+            self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location)
 
         # noinspection PyDefaultArgument
         def set_auth(self, username: str, password: str, urls=["<all_urls>"], timeout=10):
             self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.user)
 
+        # noinspection PyDefaultArgument
+        def clear_auth(self,urls=["<all_urls>"], timeout=10):
+            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.user)
+
         def clear(self, clear_webrtc=True, clear_location=True, timeout=10):
-            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=timeout, user=self.user)
+            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=int(timeout/2), user=self.user)
+            self.clear_auth(timeout=int(timeout/2))
 
     class webrtc_leak(base_driver):
         def __init__(self, socket, user):

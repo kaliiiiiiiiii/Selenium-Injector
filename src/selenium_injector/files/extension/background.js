@@ -29,19 +29,10 @@
 // chrome extension libs
 
 globalThis.proxy = {}
+proxy.credentials = {}
 
-proxy.set = function(scheme,host,port, patch_webrtc = true, patch_location=true, bypass_list=["localhost"]){
-    proxy.config = {
-        mode: "fixed_servers",
-        rules: {
-           singleProxy: {
-             scheme: scheme,
-             host: host,
-             port: port
-           },
-          bypassList: bypass_list
-        }
-    };
+proxy.set = function(config, patch_webrtc = true, patch_location=true){
+    proxy.config = config
     chrome.proxy.settings.set({value: proxy.config, scope: "regular"}, function() {});
     if (patch_webrtc){webrtc_leak.disable();};
     if(patch_location){contentsettings.set_location("block")}
@@ -61,6 +52,8 @@ proxy.clear = function(clear_webrtc=true, clear_location=true){
 
 
 proxy.set_auth = function(username, password, urls=["<all_urls>"]){
+    proxy.credentials = {"password":password, "username":username, "urls":urls};
+
     proxy.auth_call = function (details) {
         return {
             authCredentials: {
@@ -77,6 +70,7 @@ proxy.set_auth = function(username, password, urls=["<all_urls>"]){
 }
 
 proxy.clear_auth = function(urls=["<all_urls>"]){
+   proxy.credentials = {};
    chrome.webRequest.onAuthRequired.removeListener(
             proxy.auth_call,
             {urls: urls},

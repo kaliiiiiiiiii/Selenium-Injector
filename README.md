@@ -59,7 +59,7 @@ in the End. Else-wise your temporary folder will get flooded! and it keeps runni
 from selenium_injector.webdriver import Chrome
 driver = Chrome()
 
-driver.injector.proxy.set(host="example_host.com", port=143, password="password", username="user-1")
+driver.injector.proxy.set_single(host="example_host.com", port=143, password="password", username="user-1")
 
 driver.get("https://whatismyipaddress.com/")
 
