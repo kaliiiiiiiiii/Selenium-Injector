@@ -8,7 +8,7 @@ class base_driver:
             raise ValueError("Expected " + str(values) + " , but got" + str(value))
 
 
-class Driverless:
+class Injector:
     def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3", temp_dir: str = None):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import read, write, sel_injector_path, random_port

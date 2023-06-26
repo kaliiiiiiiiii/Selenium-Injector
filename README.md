@@ -33,15 +33,15 @@ from undetected_chromedriver import Chrome as base_driver
 driver = Chrome(base_drivers=(base_driver,))
 
 driver.get("https://www.wikipedia.org/")
-driver.driverless.socket.exec_command("utils.find_element.ByXpath", '//*[@id="js-link-box-en"]/strong', user=driver.driverless.tab_user)
+driver.injector.socket.exec_command("utils.find_element.ByXpath", '//*[@id="js-link-box-en"]/strong', user=driver.injector.tab_user)
 
-js = driver.driverless.socket.js
+js = driver.injector.socket.js
 t = js.types
 u = js.utils
 
 try:
     prev_url = driver.current_url[:]
-    driver.driverless.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.driverless.tab_user, timeout=2)
+    driver.injector.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.injector.tab_user, timeout=2)
 except TimeoutError as e:
     if driver.current_url != prev_url:
         pass # new page loaded before send_response
@@ -59,11 +59,11 @@ in the End. Else-wise your temporary folder will get flooded! and it keeps runni
 from selenium_injector.webdriver import Chrome
 driver = Chrome()
 
-driver.driverless.proxy.set(host="example_host.com", port=143, password="password", username="user-1")
+driver.injector.proxy.set(host="example_host.com", port=143, password="password", username="user-1")
 
 driver.get("https://whatismyipaddress.com/")
 
-driver.driverless.proxy.clear()
+driver.injector.proxy.clear()
 driver.quit()
 ```
 
