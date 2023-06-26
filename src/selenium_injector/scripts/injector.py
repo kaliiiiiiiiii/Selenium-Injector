@@ -76,7 +76,8 @@ class Injector:
             self.socket.exec_command("proxy.set", [config, patch_webrtc, patch_location],
                                      timeout=10, user=self.user)
 
-        def set_single(self, host: str, port: int, scheme: str = "http", patch_webrtc: bool = True,
+        # noinspection PyDefaultArgument
+        def set_single(self, host: str, port: int, scheme: str = "http", bypass_list=["localhost", "127.0.0.1"], patch_webrtc: bool = True,
                        patch_location: bool = True,
                        username: str = None, password: str = None,
                        timeout=10):
@@ -91,7 +92,7 @@ class Injector:
 
             config = {"mode": "fixed_servers", "rules": {
                 "singleProxy": {"host": host, "port": port, "scheme": scheme},
-                "bypassList": ["localhost", "127.0.0.1"]
+                "bypassList": bypass_list
             }}
 
             self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location)
