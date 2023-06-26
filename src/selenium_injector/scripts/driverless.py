@@ -9,7 +9,7 @@ class base_driver:
 
 
 class Driverless:
-    def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3"):
+    def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3", temp_dir: str = None):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import read, write, sel_injector_path, random_port
 
@@ -20,15 +20,20 @@ class Driverless:
 
         self.user = user
 
-        self.config = f"""
+        config = f"""
         var connection = new connector("{host}", {port}, "{self.user}")
         connection.connect();
         """
-        self.path = sel_injector_path() + "files/tmp/injector_extension"
+        if temp_dir:
+            self.path = temp_dir + "/injector_extension"
+        else:
+            self.path = sel_injector_path() + "files/tmp/injector_extension"
 
-        self.background_js = read("files/extension/background.js")
+        background_js = read("files/extension/background.js")
+        manifest_json = read("files/extension/manifest.json")
         self.connection_js = read("files/js/connection.js")
-        write(self.path + "/background.js", self.background_js + self.connection_js + self.config, sel_root=False)
+        write(self.path + "/background.js", background_js + self.connection_js + config, sel_root=False)
+        write(self.path + "/manifest.json", manifest_json, sel_root=False)
 
         self.socket = socket()
         self.socket.start(port=port, host=host)
@@ -44,7 +49,8 @@ class Driverless:
 
     @property
     def page_source(self):
-        return self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"), user="tab-0")["result"][0]
+        return \
+            self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"), user="tab-0")["result"][0]
 
     class proxy(base_driver):
         def __init__(self, socket, user):
@@ -54,13 +60,13 @@ class Driverless:
         @property
         def rules(self):
             try:
-                return self.socket.exec_command("proxy.get",user=self.user)["result"][0]["value"]["rules"]
+                return self.socket.exec_command("proxy.get", user=self.user)["result"][0]["value"]["rules"]
             except KeyError:
                 return None
 
         @property
         def mode(self):
-            return self.socket.exec_command("proxy.get",user=self.user)["result"][0]["value"]["mode"]
+            return self.socket.exec_command("proxy.get", user=self.user)["result"][0]["value"]["mode"]
 
         # noinspection PyDefaultArgument
         def set(self, host: str, port: int, scheme: str = "http", patch_webrtc: bool = True,

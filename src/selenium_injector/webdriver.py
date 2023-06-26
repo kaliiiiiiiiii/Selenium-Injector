@@ -6,7 +6,8 @@ import warnings
 
 class Chrome(BaseDriver):
     # noinspection PyDefaultArgument
-    def __init__(self, driverless_options={"port": None, "host": None}, base_drivers: tuple = None, **kwargs):
+    def __init__(self, injector_options={"port": None, "host": None, "temp_dir": None}, base_drivers: tuple = None,
+                 **kwargs):
 
         if not base_drivers:
             base_drivers = tuple()
@@ -21,12 +22,10 @@ class Chrome(BaseDriver):
         else:
             Chrome.__bases__ = base_drivers
 
-        port = driverless_options["port"]
-        host = driverless_options["host"]
-        self.driverless = Driverless(port=port, host=host)
+        if not injector_options:
+            injector_options = {}
 
-        from selenium_injector.utils.utils import read
-        utils_js = read("files/js/utils.js")
+        self.driverless = Driverless(**injector_options)
 
         if "options" not in kwargs.keys():
             kwargs["options"] = ChromeOptions()
@@ -34,12 +33,16 @@ class Chrome(BaseDriver):
 
         super().__init__(**kwargs)
 
+        # connection to tab-0
         tab_index = self.window_handles.index(self.current_window_handle).__str__()
         self.driverless.tab_user = "tab-" + tab_index
         config = f"""
                 var connection = new connector("{self.driverless.socket.host}", {self.driverless.socket.port}, "{self.driverless.tab_user}")
                 connection.connect();
                 """
+
+        from selenium_injector.utils.utils import read
+        utils_js = read("files/js/utils.js")
         self.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
                              {"source": "(function(){%s})()" % (utils_js + self.driverless.connection_js + config)})
 
