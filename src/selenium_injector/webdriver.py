@@ -22,7 +22,7 @@ class Chrome(BaseDriver):
         else:
             Chrome.__bases__ = base_drivers
 
-        if not injector_options:
+        if not injector_options or injector_options is True:
             injector_options = {}
 
         self.driverless = Driverless(**injector_options)
