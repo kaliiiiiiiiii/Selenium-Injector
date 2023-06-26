@@ -91,7 +91,7 @@ class Injector:
 
             config = {"mode": "fixed_servers", "rules": {
                 "singleProxy": {"host": host, "port": port, "scheme": scheme},
-                "bypassList": ["localhost"]
+                "bypassList": ["localhost", "127.0.0.1"]
             }}
 
             self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location)
