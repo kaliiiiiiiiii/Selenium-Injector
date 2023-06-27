@@ -70,7 +70,7 @@ class Injector:
 
         @property
         def auth(self):
-            return self.socket.exec(self.socket.js.types.path("proxy.credentials", user =self.user))["result"][0]
+            return self.socket.exec(self.socket.js.types.path("proxy.credentials"), user =self.user)["result"][0]
 
         def set(self, config, patch_webrtc: bool = True, patch_location: bool = True):
             self.socket.exec_command("proxy.set", [config, patch_webrtc, patch_location],
