@@ -85,7 +85,9 @@ class Injector:
             self.check_cmd(scheme, self.supported_schemes)
             # auth
             if username and password:
-                timeout = int(timeout / 2)
+                timeout = int(timeout / 3)
+                if self.auth:
+                    self.clear_auth(timeout=timeout)
                 self.set_auth(username=username, password=password, timeout=timeout)
             elif username or password:
                 raise ValueError("For authentification, username and password need to get specified, only got one")
