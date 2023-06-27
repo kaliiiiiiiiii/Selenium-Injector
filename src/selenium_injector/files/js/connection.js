@@ -45,6 +45,7 @@ handler(request){
         console.log({"request":request})
         this.not_return = request["not_return"]
         this.status = 200
+        var e = undefined
         try{var result = this.eval(request)}catch(e){
             var result={"message":e.message,"stack":e.stack};
             this.status="error"};
