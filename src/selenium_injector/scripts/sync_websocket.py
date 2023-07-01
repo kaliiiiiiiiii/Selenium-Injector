@@ -12,6 +12,7 @@ class SynchronousWebsocketServer:
     """
 
     def __init__(self):
+
         self.loop = asyncio.new_event_loop()
         self.ws_server = None
         self.users = {}
@@ -39,36 +40,52 @@ class SynchronousWebsocketServer:
             except KeyError:
                 pass
 
-    def recv(self, user: str = None, timeout: int = 10):
+    def recv(self, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
         import time
-        user = self.wait_user(user, timeout=int(timeout/2))
-        for i in range(timeout * 5):
+        if not start_time:
+            start_time = self.time
+
+        def time_check():
+            if (self.time - start_time) >= timeout:
+                raise TimeoutError(f"Didn't get a response within {timeout} seconds")
+
+        while True:
+            user = self.wait_user(user, timeout=timeout, start_time=start_time, intervall=intervall)
             self.process()
             try:
                 if not self.users[user]["rxqueue"].empty():
-                    return self.users[user]["rxqueue"].get_nowait()
+                    return self.users[user]["rxqueue"].get(timeout=intervall)
             except KeyError:
-                pass # user not connected atm
-            self.wait_user(user, timeout=int(timeout / 2))
-            time.sleep(0.1)
-        raise TimeoutError(f"Didn't get a response within {timeout} seconds")
+                time.sleep(intervall)  # user not connected atm
+                time_check()
+            except queue.Empty:
+                time_check()  # not yet received
 
-    def send(self, message: str, user: str = None, timeout=10):
-        user = self.wait_user(user, timeout=timeout)
+    def send(self, message: str, user: str = None, timeout=10, intervall: float = 0.1, start_time=None):
+        import time
+        if not start_time:
+            start_time = self.time
+
+        user = self.wait_user(user, timeout=timeout, intervall=intervall, start_time=start_time)
         self.loop.run_until_complete(self.users[user]["ws"].send(message))
 
-    def wait_user(self, user: str = None, timeout: int = 10):
+    def wait_user(self, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
+        import time
+        if not start_time:
+            start_time = self.time
+
         if timeout is False:
             self.get_user(user)
         else:
             import time
-            for i in range(timeout * 10):
+            while True:
                 try:
                     return self.get_user(user=user)
                 except LookupError:
                     pass
-                time.sleep(0.1)
-            raise TimeoutError("User not connected")
+                time.sleep(intervall)
+                if (self.time - start_time) >= timeout:
+                    raise TimeoutError("User not connected")
 
     def get_user(self, user=None):
         self.process(nloop=5)
@@ -88,6 +105,11 @@ class SynchronousWebsocketServer:
         for i in range(nloop):  # Process events few times to make sure we handle events generated within the loop
             self.loop.call_soon(self.loop.stop)
             self.loop.run_forever()
+
+    @property
+    def time(self):
+        import time
+        return time.perf_counter()
 
     def start(self, host: str, port: int) -> None:
         self.port = port

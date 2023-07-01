@@ -91,9 +91,11 @@ class Injector:
             return self.socket.exec(self.socket.js.types.path("proxy.credentials"),
                                     user=self.user, timeout=2)["result"][0]
 
-        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10):
+        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10, start_time=None, intervall:float=0.1):
+            if not start_time:
+                start_time = self.socket.time
             self.socket.exec_command("proxy.set", [config, patch_webrtc, patch_location],
-                                     timeout=timeout, user=self.user)
+                                     timeout=timeout, user=self.user, start_time=start_time, intervall=intervall)
 
         # noinspection PyDefaultArgument
         def set_single(self, host: str, port: int, scheme: str = "http", bypass_list=["localhost", "127.0.0.1"],
@@ -101,14 +103,13 @@ class Injector:
                        patch_location: bool = True,
                        username: str = None, password: str = None,
                        timeout: int = 10):
-
+            start_time = self.socket.time
             self.check_cmd(scheme, self.supported_schemes)
             # auth
             if username and password:
-                timeout = int(timeout / 3)
                 if self.auth:
                     self.clear_auth(timeout=timeout)
-                self.set_auth(username=username, password=password, timeout=timeout)
+                self.set_auth(username=username, password=password, timeout=timeout, start_time=start_time)
             elif username or password:
                 raise ValueError("For authentification, username and password need to get specified, only got one")
 
@@ -117,20 +118,23 @@ class Injector:
                 "bypassList": bypass_list
             }}
 
-            self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location)
+            self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location, timeout=timeout, start_time=start_time)
 
         # noinspection PyDefaultArgument
-        def set_auth(self, username: str, password: str, urls=["<all_urls>"], timeout=10):
-            self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.user)
+        def set_auth(self, username: str, password: str, urls=["<all_urls>"], timeout=10, start_time=None, intervall:float=0.1):
+            if not start_time:
+                start_time = self.socket.time
+            self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.user, start_time=start_time, intervall=intervall)
 
         # noinspection PyDefaultArgument
-        def clear_auth(self, urls=["<all_urls>"], timeout=10):
-            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.user)
+        def clear_auth(self, urls=["<all_urls>"], timeout=10, start_time=None, intervall:float=0.1):
+            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.user, start_time=start_time, intervall=intervall)
 
         def clear(self, clear_webrtc=True, clear_location=True, timeout=10):
-            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=int(timeout / 2),
+            start_time = self.socket.time
+            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=timeout,start_time=start_time,
                                      user=self.user)
-            self.clear_auth(timeout=int(timeout / 2))
+            self.clear_auth(timeout=timeout, start_time=start_time)
 
     class webrtc_leak(base_driver):
         def __init__(self, socket, user):
@@ -162,12 +166,12 @@ class Injector:
             self.socket.exec_command("contentsettings.set_location", [setting, urls], timeout=timeout, user=self.user)
 
     class tabs(base_driver):
-        def query(self, query=None):
+        def query(self, query=None, timeout=5):
             if not query:
                 query = {}
             return self.socket.exec_async(script={"type": "exec", "func": {"type": "path", "path": "chrome.tabs.query"},
                                                   "args": [{"type": "val", 'val': query}, self.socket.send_back]
-                                                  }, user=self.user)
+                                                  }, user=self.user, timeout=timeout)
 
         @property
         def all_tabs(self):
