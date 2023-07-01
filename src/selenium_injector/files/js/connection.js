@@ -50,7 +50,7 @@ class handler {
 parse(results, status){return '{"result":'+this.stringify(results)+', "status":'+JSON.stringify(status)+'}'}
 send_back(...results) {
 
-    try{var response = this.parse(results, self.status)}
+    try{var response = this.parse(results, this.status)}
     // serialisation failed
     catch(e){var response = this.parse([{"message":e.message,"stack":e.stack}], "error")}
 
