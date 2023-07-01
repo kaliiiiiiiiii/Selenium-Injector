@@ -25,7 +25,7 @@ class Chrome(BaseDriver):
         if not injector_options or injector_options is True:
             injector_options = {}
 
-        self.injector = Injector(**injector_options)
+        self.injector = Injector(debug=True, **injector_options)
 
         if "options" not in kwargs.keys():
             kwargs["options"] = ChromeOptions()

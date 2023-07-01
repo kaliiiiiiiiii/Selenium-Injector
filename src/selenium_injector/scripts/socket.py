@@ -9,13 +9,6 @@ class socket(SynchronousWebsocketServer):
         self.not_return = {"not_return": True}
         super().__init__()
 
-    def post(self, message: str, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
-        if not start_time:
-            start_time = self.time
-
-        self.send(message=message, user=user, timeout=timeout, start_time=start_time, intervall=intervall)
-        return self.recv(user=user, timeout=timeout, start_time=start_time, intervall=intervall)
-
     def exec(self, script: dict, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
         if not start_time:
             start_time = self.time

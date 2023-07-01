@@ -45,32 +45,46 @@ class SynchronousWebsocketServer:
         if not start_time:
             start_time = self.time
 
-        def time_check():
-            if (self.time - start_time) >= timeout:
-                raise TimeoutError(f"Didn't get a response within {timeout} seconds")
-
         while True:
             user = self.wait_user(user, timeout=timeout, start_time=start_time, intervall=intervall)
             self.process()
             try:
                 if not self.users[user]["rxqueue"].empty():
-                    return self.users[user]["rxqueue"].get(timeout=intervall)
+                    return self.users[user]["rxqueue"].get_nowait()
             except KeyError:
-                time.sleep(intervall)  # user not connected atm
-                time_check()
-            except queue.Empty:
-                time_check()  # not yet received
+                pass
+            time.sleep(intervall)  # user not connected atm
+            if (self.time - start_time) >= timeout:
+                raise TimeoutError(f"Didn't get a response within {timeout} seconds")
+
 
     def send(self, message: str, user: str = None, timeout=10, intervall: float = 0.1, start_time=None):
-        import time
         if not start_time:
             start_time = self.time
 
         user = self.wait_user(user, timeout=timeout, intervall=intervall, start_time=start_time)
         self.loop.run_until_complete(self.users[user]["ws"].send(message))
 
+    def post(self, message: str, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
+        import uuid
+        if not start_time:
+            start_time = self.time
+
+        # protocoll
+        # fist 32 chars is request_id, rest is message
+        req_id = uuid.uuid4().hex
+        parsed = req_id + message
+
+        self.send(message=parsed, user=user, timeout=timeout, start_time=start_time, intervall=intervall)
+        response_raw = self.recv(user=user, timeout=timeout, start_time=start_time, intervall=intervall)
+        response = response_raw[32:]
+        resp_id = response_raw[0:32]
+        if not req_id == resp_id:
+            print(resp_id, req_id)
+            raise NotImplementedError("Error during request handling, received wrong response")
+        return response
+
     def wait_user(self, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
-        import time
         if not start_time:
             start_time = self.time
 

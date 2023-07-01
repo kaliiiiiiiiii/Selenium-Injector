@@ -7,7 +7,7 @@ class DefaultDict {
 }
 
 class handler {
-    constructor(connector, request, debug=false){
+    constructor(connector, request,debug=false){
 
         this.not_return = false
         this.status = 200
@@ -15,6 +15,11 @@ class handler {
         this.debug = debug
         var error = undefined
         var result = undefined
+
+        // protocoll
+        // fist 32 chars is request_id, rest is message
+        this.req_id = request.slice(0, 32)
+        request = request.slice(32)
 
         try{ // process request
             var request = JSON.parse(request)
@@ -42,11 +47,19 @@ class handler {
             this.send_back(result)
         }
     }
+parse(results, status){return '{"result":'+this.stringify(results)+', "status":'+JSON.stringify(status)+'}'}
 send_back(...results) {
-    var response = '{"result":'+this.stringify(results)+', "status":'+JSON.stringify(this.status)+'}';
+
+    try{var response = this.parse(results, self.status)}
+    // serialisation failed
+    catch(e){var response = this.parse([{"message":e.message,"stack":e.stack}], "error")}
 
     if(this.debug){console.log({"response":JSON.parse(response)})
                   };
+
+    // protocoll
+    // fist 32 chars is request_id, rest is message
+    response = this.req_id + response
     this.connector.socket.send(response)
 }
 
