@@ -1,5 +1,5 @@
 from selenium.webdriver import ChromeOptions
-from selenium_injector.scripts.injector import Injector
+from selenium_injector.scripts.injector import Injector, make_config
 from selenium.webdriver import Chrome as BaseDriver
 import warnings
 
@@ -36,11 +36,7 @@ class Chrome(BaseDriver):
         # connection to tab-0
         tab_index = self.window_handles.index(self.current_window_handle).__str__()
         self.injector.tab_user = "tab-" + tab_index
-        config = f"""
-                var connection = new connector("{self.injector.socket.host}", {self.injector.socket.port}, "{self.injector.tab_user}")
-                connection.connect();
-                """
-
+        config = make_config(self.injector.socket.host, self.injector.socket.port, self.injector.tab_user, debug=True)
         from selenium_injector.utils.utils import read
         utils_js = read("files/js/utils.js")
         self.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",

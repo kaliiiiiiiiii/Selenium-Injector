@@ -38,9 +38,8 @@ proxy.set = function(config, patch_webrtc = true, patch_location=true){
     if(patch_location){contentsettings.set_location("block")}
 }
 
-proxy.get = function(){
-    connection.not_return = true;
-    chrome.proxy.settings.get({'incognito': false}, connection.send_back.bind(connection));
+proxy.get = function(callback){
+    chrome.proxy.settings.get({'incognito': false}, callback);
 }
 
 proxy.clear = function(clear_webrtc=true, clear_location=true){

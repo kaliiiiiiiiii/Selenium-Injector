@@ -4,6 +4,9 @@ class JS:
         self.utils = self.utils(self.types)
 
     class types:
+        def __init__(self):
+            self.not_return = {"not_return": True}
+
         def path(self, path: str, obj: dict = None):
             return {"type": "path", "path": path, "obj": obj}
 
@@ -28,8 +31,14 @@ class JS:
         def operator(self, a: dict, b: dict, operator: str):
             return {"type": "op", "a": a, "b": b, "op": operator}
 
+        def negation(self, obj: dict):
+            return {"type": "!", "obj": obj}
+
+        def this(self):
+            return {"type": "this"}
+
         def send_back(self):
-            return self.path("send_back", obj={"type": "this"})
+            return self.path("send_back", obj=self.this())
 
     class utils:
         def __init__(self, types):

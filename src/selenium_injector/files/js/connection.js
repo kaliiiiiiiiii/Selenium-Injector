@@ -6,13 +6,49 @@ class DefaultDict {
   }
 }
 
-class connector {
-  constructor(host, port, username) {
-    this.connection = {}
-    this.connection.host = host;
-    this.connection.port = port;
-    this.connection.username = username;
-  }
+class handler {
+    constructor(connector, request, debug=false){
+
+        this.not_return = false
+        this.status = 200
+        this.connector = connector
+        this.debug = debug
+        var error = undefined
+        var result = undefined
+
+        try{ // process request
+            var request = JSON.parse(request)
+
+            if(this.debug){console.log({"request":request})}
+
+            if (request.hasOwnProperty("not_return")){this.not_return = request["not_return"]}
+
+            var result = this.eval(request)
+
+            if(this.not_return && result && result.catch && this.isFunction(result.catch)){
+                    // handle async errors
+                    result.catch((e) => {
+                        result={"message":e.message,"stack":e.stack};
+                        this.status="error"
+                    })
+                }
+            }
+        catch(e){
+            // handle sync errors
+            var result={"message":e.message,"stack":e.stack};
+            this.status="error"
+            };
+        if(!(this.not_return) || this.status=="error"){
+            this.send_back(result)
+        }
+    }
+send_back(...results) {
+    var response = '{"result":'+this.stringify(results)+', "status":'+JSON.stringify(this.status)+'}';
+
+    if(this.debug){console.log({"response":JSON.parse(response)})
+                  };
+    this.connector.socket.send(response)
+}
 
 // structs
 
@@ -20,39 +56,7 @@ isFunction(functionToCheck) {
  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
 }
 
-// connection to python
-
-connect(){
-    this.connection.socket = new WebSocket("ws://"+this.connection.host+":"+parseInt(this.connection.port));
-      this.connection.socket.addEventListener("open", (event) => {
-        this.connection.socket.send(this.connection.username);
-        this.connection.socket.addEventListener("message", (event) => {
-            this.handler(event.data)
-            });
-        });
-      this.connection.socket.addEventListener("error", (event) => {this.connect()});
-      this.connection.socket.addEventListener("close", (event) => {this.connect()});
-}
-
-send_back(...results) {
-    var response = '{"result":'+this.stringify(results)+', "status":'+JSON.stringify(this.status)+'}';
-    console.log({"response":JSON.parse(response)});
-    this.connection.socket.send(response)
-}
-
-handler(request){
-        var request = JSON.parse(request);
-        console.log({"request":request})
-        this.not_return = request["not_return"]
-        this.status = 200
-        var e = undefined
-        try{var result = this.eval(request)}catch(e){
-            var result={"message":e.message,"stack":e.stack};
-            this.status="error"};
-        if(this.not_return){if(e){throw e}}
-        else{this.send_back(result)}
-}
-
+// eval
 eval(type_json){
     var defaultdict = new DefaultDict(undefined)
     var type_json = Object.assign({}, defaultdict, type_json)
@@ -81,6 +85,9 @@ eval(type_json){
             break;
         case "op":
             var result = this.op(type_json["op"], this.eval(type_json["a"]), this.eval(type_json["b"]));
+            break;
+        case "!":
+            var result = !(this.eval(type_json["obj"]))
             break;
         case "this":
             var result = this
@@ -166,29 +173,21 @@ replacer(key, value) {
 }
 
 op(op, a, b) {
-      function num(x) {
-        if (typeof x != "number")
-          throw new Error("Expected number but got " + x);
-        return x;
-      }
-      function div(x) {
-        if (num(x) == 0)
-          throw new Error("Divide by zero");
-        return x;
-      }
-      var a = this.eval(a)
-      var b = this.eval(b)
       switch (op) {
         case "+":
           return a + b;
         case "-":
-          return num(a) - num(b);
+          return a - b;
         case "*":
-          return num(a) * num(b);
+          return a * b;
         case "/":
-          return num(a) / div(b);
+          return a / b;
+        case "^":
+          return a ^ b;
         case "%":
-          return num(a) % div(b);
+          return a % b;
+        case "&":
+          return a & b;
         case "&&":
           return a && b;
         case "||":
@@ -196,13 +195,13 @@ op(op, a, b) {
         case "|":
           return a | b;
         case "<":
-          return num(a) < num(b);
+          return a < b;
         case ">":
-          return num(a) > num(b);
+          return a > b;
         case "<=":
-          return num(a) <= num(b);
+          return a <= b;
         case ">=":
-          return num(a) >= num(b);
+          return a >= b;
         case "==":
           return a == b;
         case "===":
@@ -211,6 +210,30 @@ op(op, a, b) {
           return a != b;
       }
       throw new Error("Can't apply operator " + op);
+    }
+}
+
+class connector {
+  constructor(host, port, username, handler, debug=false) {
+    this.host = host;
+    this.port = port;
+    this.username = username;
+    this.handler = handler
+    this.debug = debug
+    this.connect()
+  }
+
+// connection to python
+connect(){
+    this.socket = new WebSocket("ws://"+this.host+":"+parseInt(this.port));
+      this.socket.addEventListener("open", (event) => {
+        this.socket.send(this.username);
+        this.socket.addEventListener("message", (event) => {
+            var handler = new this.handler(this, event.data, this.debug)
+            });
+        });
+      this.socket.addEventListener("error", (event) => {this.connect()});
+      this.socket.addEventListener("close", (event) => {this.connect()});
 }
 
 } //end connector class

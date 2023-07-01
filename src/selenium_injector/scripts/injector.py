@@ -2,14 +2,27 @@ class base_driver:
     def __init__(self, socket, user: str):
         self.socket = socket
         self.user = user
+        self.t = socket.js.types
 
     def check_cmd(self, value, values):
         if value not in values:
             raise ValueError("Expected " + str(values) + " , but got" + str(value))
 
 
+def make_config(host: str, port: int, user: str, debug: bool or None = None):
+    if debug:
+        debug = "true"
+    else:
+        debug = "false"
+    config = f"""
+            (function(){{new connector("{host}",{str(port)}, "{user}", handler, {debug})}}())
+                """
+    return config
+
+
 class Injector:
-    def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3", temp_dir: str = None):
+    def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3", temp_dir: str = None,
+                 debug: bool or None = None):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import read, write, sel_injector_path, random_port
 
@@ -20,10 +33,7 @@ class Injector:
 
         self.user = user
 
-        config = f"""
-        var connection = new connector("{host}", {port}, "{self.user}")
-        connection.connect();
-        """
+        config = make_config(host, port, user, debug=debug)
         if temp_dir:
             self.path = temp_dir + "/injector_extension"
         else:
@@ -49,38 +59,48 @@ class Injector:
 
     @property
     def page_source(self):
-        return \
-            self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"), user="tab-0")["result"][0]
+        try:
+            return self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"),
+                                    user="tab-0", timeout=2)["result"][0]
+        except TimeoutError:
+            return None
 
     class proxy(base_driver):
         def __init__(self, socket, user):
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
             super().__init__(socket, user=user)
 
+        def _get(self, timeout: int = 2):
+            req = self.t.exec(func=self.t.path("proxy.get"), args=[self.t.send_back()])
+            req.update(self.t.not_return)
+            return self.socket.exec(req, user=self.user, timeout=timeout)["result"][0]
+
         @property
         def rules(self):
             try:
-                return self.socket.exec_command("proxy.get", user=self.user)["result"][0]["value"]["rules"]
+                return self._get()["value"]["rules"]
             except KeyError:
                 return None
 
         @property
         def mode(self):
-            return self.socket.exec_command("proxy.get", user=self.user)["result"][0]["value"]["mode"]
+            return self._get()["value"]["mode"]
 
         @property
         def auth(self):
-            return self.socket.exec(self.socket.js.types.path("proxy.credentials"), user =self.user)["result"][0]
+            return self.socket.exec(self.socket.js.types.path("proxy.credentials"),
+                                    user=self.user, timeout=2)["result"][0]
 
-        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True):
+        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10):
             self.socket.exec_command("proxy.set", [config, patch_webrtc, patch_location],
-                                     timeout=10, user=self.user)
+                                     timeout=timeout, user=self.user)
 
         # noinspection PyDefaultArgument
-        def set_single(self, host: str, port: int, scheme: str = "http", bypass_list=["localhost", "127.0.0.1"], patch_webrtc: bool = True,
+        def set_single(self, host: str, port: int, scheme: str = "http", bypass_list=["localhost", "127.0.0.1"],
+                       patch_webrtc: bool = True,
                        patch_location: bool = True,
                        username: str = None, password: str = None,
-                       timeout=10):
+                       timeout: int = 10):
 
             self.check_cmd(scheme, self.supported_schemes)
             # auth
@@ -104,12 +124,13 @@ class Injector:
             self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.user)
 
         # noinspection PyDefaultArgument
-        def clear_auth(self,urls=["<all_urls>"], timeout=10):
+        def clear_auth(self, urls=["<all_urls>"], timeout=10):
             self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.user)
 
         def clear(self, clear_webrtc=True, clear_location=True, timeout=10):
-            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=int(timeout/2), user=self.user)
-            self.clear_auth(timeout=int(timeout/2))
+            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=int(timeout / 2),
+                                     user=self.user)
+            self.clear_auth(timeout=int(timeout / 2))
 
     class webrtc_leak(base_driver):
         def __init__(self, socket, user):
