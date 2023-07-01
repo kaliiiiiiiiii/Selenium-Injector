@@ -91,7 +91,8 @@ class Injector:
             return self.socket.exec(self.socket.js.types.path("proxy.credentials"),
                                     user=self.user, timeout=1)["result"][0]
 
-        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10, start_time=None, intervall:float=0.1):
+        def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10,
+                start_time=None, intervall: float = 0.1):
             if not start_time:
                 start_time = self.socket.time
             self.socket.exec_command("proxy.set", [config, patch_webrtc, patch_location],
@@ -118,21 +119,26 @@ class Injector:
                 "bypassList": bypass_list
             }}
 
-            self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location, timeout=timeout, start_time=start_time)
+            self.set(config=config, patch_webrtc=patch_webrtc, patch_location=patch_location, timeout=timeout,
+                     start_time=start_time)
 
         # noinspection PyDefaultArgument
-        def set_auth(self, username: str, password: str, urls=["<all_urls>"], timeout=10, start_time=None, intervall:float=0.1):
+        def set_auth(self, username: str, password: str, urls=["<all_urls>"], timeout=10, start_time=None,
+                     intervall: float = 0.1):
             if not start_time:
                 start_time = self.socket.time
-            self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.user, start_time=start_time, intervall=intervall)
+            self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.user,
+                                     start_time=start_time, intervall=intervall)
 
         # noinspection PyDefaultArgument
-        def clear_auth(self, urls=["<all_urls>"], timeout=10, start_time=None, intervall:float=0.1):
-            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.user, start_time=start_time, intervall=intervall)
+        def clear_auth(self, urls=["<all_urls>"], timeout=10, start_time=None, intervall: float = 0.1):
+            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.user, start_time=start_time,
+                                     intervall=intervall)
 
         def clear(self, clear_webrtc=True, clear_location=True, timeout=10):
             start_time = self.socket.time
-            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=timeout,start_time=start_time,
+            self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=timeout,
+                                     start_time=start_time,
                                      user=self.user)
             self.clear_auth(timeout=timeout, start_time=start_time)
 
