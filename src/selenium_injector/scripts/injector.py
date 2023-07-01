@@ -61,7 +61,7 @@ class Injector:
     def page_source(self):
         try:
             return self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"),
-                                    user="tab-0", timeout=2)["result"][0]
+                                    user="tab-0", timeout=1)["result"][0]
         except TimeoutError:
             return None
 
@@ -70,7 +70,7 @@ class Injector:
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
             super().__init__(socket, user=user)
 
-        def _get(self, timeout: int = 2):
+        def _get(self, timeout: int = 1):
             req = self.t.exec(func=self.t.path("proxy.get"), args=[self.t.send_back()])
             req.update(self.t.not_return)
             return self.socket.exec(req, user=self.user, timeout=timeout)["result"][0]
@@ -89,7 +89,7 @@ class Injector:
         @property
         def auth(self):
             return self.socket.exec(self.socket.js.types.path("proxy.credentials"),
-                                    user=self.user, timeout=2)["result"][0]
+                                    user=self.user, timeout=1)["result"][0]
 
         def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10, start_time=None, intervall:float=0.1):
             if not start_time:
