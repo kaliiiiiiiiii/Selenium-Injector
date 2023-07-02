@@ -39,8 +39,8 @@ js = driver.injector.socket.js
 t = js.types
 u = js.utils
 
+prev_url = driver.current_url[:]
 try:
-    prev_url = driver.current_url[:]
     driver.injector.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.injector.tab_user, timeout=2)
 except TimeoutError as e:
     if driver.current_url != prev_url:
