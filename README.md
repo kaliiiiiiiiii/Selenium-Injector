@@ -86,7 +86,7 @@ driver.injector.socket.exec(t.list([
     t.set_event_id(event_id),
     t.exec(
         t.path("chrome.webRequest.onCompleted.addListener"),
-        args=[t.event_callback(), t.value({"urls":["<all_urls>"]})]
+        args=[t.event_callback(), t.value({"urls": ["<all_urls>"]})]
     )
 ]), driver.injector.user, max_depth=1)
 
