@@ -106,6 +106,7 @@ Please feel free to open an issue or fork!
 
 ## Todo
 
+- [ ] eval within tab scope from extension
 - [ ] Add MV2 extension
   - [ ] change headers
 - [x] add events
