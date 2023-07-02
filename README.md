@@ -111,6 +111,7 @@ Please feel free to open an issue or fork!
 - [x] add events
   - [x] make protocoll use `UUIDS`'s
   - [ ] allow response to event within scope
+    - using `(...args) => {new event_handler(...args)}`
 - [x] types.eval
   - [ ] for-loops
   - [x] async execution

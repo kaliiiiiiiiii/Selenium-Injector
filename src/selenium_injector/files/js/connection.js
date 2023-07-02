@@ -57,16 +57,16 @@ class handler {
 parse(results, status){
     var date = new Date()
     date = date.toLocaleString()
-    return '{"result":'+this.stringify(results,0, this.max_depth)+', "status":'+JSON.stringify(status)+',"t":"'+date+'"}'
+
+    try{var parsed = '{"result":'+this.stringify(results,0, this.max_depth)+', "status":'+JSON.stringify(status)+',"t":"'+date+'"}'}
+    catch(e){var parsed = this.parse([{"message":e.message,"stack":e.stack}], "error")}
+    return  parsed
     }
 
 send_back(...results) {
     var resp_id = this.req_id
 
-    try{var response = this.parse(results, this.status)}
-    // serialisation failed
-    catch(e){var response = this.parse([{"message":e.message,"stack":e.stack}], "error")}
-
+    var response = this.parse(results, this.status)
 
     if(this.debug){
         var debug_msg = {}
