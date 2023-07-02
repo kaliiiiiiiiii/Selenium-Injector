@@ -221,6 +221,8 @@ op(op, a, b) {
           return a === b;
         case "!=":
           return a != b;
+        case "=":
+          return a = b;
       }
       throw new Error("Can't apply operator " + op);
     }

@@ -34,11 +34,11 @@ class SynchronousWebsocketServer:
                 response = message[32:]
                 resp_id = message[0:32]
 
-                if resp_id[0] == "E": # is event
+                if resp_id[0] == "E":  # is event
                     if resp_id not in self.users[user]["events"]:
                         self.users[user]["events"][resp_id] = queue.Queue()
                     self.users[user]["events"][resp_id].put(response)
-                else: # is response
+                else:  # is response
                     if resp_id in self.users[user]["rx"]:
                         raise ConnectionError(f'allready got ["{user}"]["rx"]["{resp_id}"], dublicate response-id')
                     self.users[user]["rx"].update({resp_id: response})
