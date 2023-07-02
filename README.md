@@ -108,8 +108,9 @@ Please feel free to open an issue or fork!
 
 - [ ] Add MV2 extension
   - [ ] change headers
-- [ ] add events
-  - [ ] make protocoll use `UUIDS`'s
+- [x] add events
+  - [x] make protocoll use `UUIDS`'s
+  - [ ] allow response to event within scope
 - [x] types.eval
   - [ ] for-loops
   - [x] async execution
