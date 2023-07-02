@@ -70,8 +70,10 @@ send_back(...results) {
 
     if(this.debug){
         var debug_msg = {}
+        var type = "response"
+        if(resp_id[0] === "E"){type = "event"}
         debug_msg[resp_id] = JSON.parse(response)
-        console.log("response",debug_msg)
+        console.log("event",debug_msg)
     };
 
     // protocol
