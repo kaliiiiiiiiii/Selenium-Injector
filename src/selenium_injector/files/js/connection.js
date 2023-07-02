@@ -73,7 +73,7 @@ send_back(...results) {
         var type = "response"
         if(resp_id[0] === "E"){type = "event"}
         debug_msg[resp_id] = JSON.parse(response)
-        console.log("event",debug_msg)
+        console.log(type,debug_msg)
     };
 
     // protocol
@@ -195,9 +195,10 @@ if_else(condition, statement, else_statement=undefined){
 }
 
 stringify(object, depth=0, max_depth=2) {
-    function valid(value){
-        return !(typeof value === "function" || value == undefined || value == null || value === "")
-    }
+    const valid = function(value){
+        // filter out certain values
+        return !(value == undefined || value == null || typeof value == "function" || value === "")
+    }.bind(this)
 
     // change max_depth to see more levels, for a touch event, 2 is good
     if (depth > max_depth)
@@ -216,7 +217,7 @@ stringify(object, depth=0, max_depth=2) {
         for (let key in object) {
             let value = object[key];
             if (value instanceof globalThis.constructor)
-                value = globalThis.constructor.name;
+                value = globalThis.constructor.name; // handle recursive
             else if (value instanceof Object)
                 value = this.stringify(value, depth+1, max_depth);
 

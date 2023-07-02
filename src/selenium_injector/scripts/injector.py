@@ -63,7 +63,8 @@ class Injector:
             return self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"),
                                     user="tab-0", timeout=1)["result"][0]
         except TimeoutError:
-            return None
+            # 'data:,' startup url
+            return '<html><head></head><body></body></html>'
 
     @property
     def current_url(self):
