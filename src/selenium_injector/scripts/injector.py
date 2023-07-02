@@ -65,6 +65,20 @@ class Injector:
         except TimeoutError:
             return None
 
+    @property
+    def current_url(self):
+        try:
+            return self.tabs.active_tab['url']
+        except TimeoutError:
+            return None
+
+    @property
+    def title(self):
+        try:
+            return self.tabs.active_tab['title']
+        except TimeoutError:
+            return None
+
     class proxy(base_driver):
         def __init__(self, socket, user):
             self.supported_schemes = ["http", "https", "socks4", "socks5"]

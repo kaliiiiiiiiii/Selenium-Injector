@@ -26,14 +26,22 @@ class SynchronousWebsocketServer:
             user = await websocket.recv()
         except websockets.exceptions.ConnectionClosedError:
             return
-        self.users[user] = {"ws": websocket, "rx": {}}
+        self.users[user] = {"ws": websocket, "rx": {}, "events": {}}
 
         # noinspection PyUnresolvedReferences
         try:
             async for message in websocket:
                 response = message[32:]
                 resp_id = message[0:32]
-                self.users[user]["rx"].update({resp_id: response})
+
+                if resp_id[0] == "E": # is event
+                    if resp_id not in self.users[user]["events"]:
+                        self.users[user]["events"][resp_id] = queue.Queue()
+                    self.users[user]["events"][resp_id].put(response)
+                else: # is response
+                    if resp_id in self.users[user]["rx"]:
+                        raise ConnectionError(f'allready got ["{user}"]["rx"]["{resp_id}"], dublicate response-id')
+                    self.users[user]["rx"].update({resp_id: response})
         except websockets.exceptions.ConnectionClosedError:
             pass
         finally:
