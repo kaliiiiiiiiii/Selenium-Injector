@@ -18,7 +18,7 @@ class handler {
         var error = undefined
         var result = undefined
 
-        // protocoll
+        // protocol
         // fist 32 chars is request_id, rest is message
         this.req_id = request.slice(0, 32)
         request = request.slice(32)
@@ -74,7 +74,7 @@ send_back(...results) {
         console.log("response",debug_msg)
     };
 
-    // protocoll
+    // protocol
     // fist 32 chars is request_id, rest is message
     response = resp_id + response
     this.connector.socket.send(response)

@@ -86,13 +86,16 @@ driver.injector.socket.exec(t.list([
     t.set_event_id(event_id),
     t.exec(
         t.path("document.addEventListener"),
-        args=[t.value("click"), t.event_callback()]
+        args=[t.value("mousemove"), t.event_callback()]
     )
-]), user="tab-0")
+]), user="tab-0", max_depth=1)
 
 event = driver.injector.socket.event(event_id, "tab-0")
 for e in event:  # will block forever
-    print(json.loads(e))
+    e = json.loads(e)
+    data = e["result"][0]
+    time = e["t"]
+    print(time + "\n", {"y": data["y"], "x": data["x"]})
 ```
 warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 

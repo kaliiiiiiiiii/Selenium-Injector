@@ -18,8 +18,8 @@ class JS:
         def value(self, value):
             return {"type": "val", "val": value}
 
-        def condition(self, condition: dict, do: dict, elsewhise: dict = None):
-            return {"type": "if", "if": condition, "do": do, "else": elsewhise}
+        def condition(self, condition: dict, do: dict, elsewise: dict = None):
+            return {"type": "if", "if": condition, "do": do, "else": elsewise}
 
         # noinspection PyShadowingBuiltins
         def list(self, list: list = None):
