@@ -11,6 +11,8 @@ class handler {
 
         this.not_return = false
         this.status = 200
+        this.max_depht = 2
+        this.event_id = undefined
         this.connector = connector
         this.debug = debug
         var error = undefined
@@ -24,9 +26,14 @@ class handler {
         try{ // process request
             var request = JSON.parse(request)
 
-            if(this.debug){console.log({"request":request})}
+            if(this.debug){
+                var debug_msg = {}
+                debug_msg[this.req_id] = request
+                console.log("request",debug_msg)
+            };
 
             if (request.hasOwnProperty("not_return")){this.not_return = request["not_return"]}
+            if (request.hasOwnProperty("max_depth")){this.max_depth = request["max_depth"]}
 
             var result = this.eval(request)
 
@@ -43,24 +50,43 @@ class handler {
             var result={"message":e.message,"stack":e.stack};
             this.status="error"
             };
-        if(!(this.not_return) || this.status=="error"){
+        if(!(this.not_return) || this.status === "error"){
             this.send_back(result)
         }
     }
-parse(results, status){return '{"result":'+this.stringify(results)+', "status":'+JSON.stringify(status)+'}'}
+parse(results, status){
+    var date = new Date()
+    date = date.toLocaleString()
+    return '{"result":'+this.stringify(results,0, this.max_depth)+', "status":'+JSON.stringify(status)+',"t":"'+date+'"}'
+    }
+
 send_back(...results) {
+    var resp_id = this.req_id
 
     try{var response = this.parse(results, this.status)}
     // serialisation failed
     catch(e){var response = this.parse([{"message":e.message,"stack":e.stack}], "error")}
 
-    if(this.debug){console.log({"response":JSON.parse(response)})
-                  };
+
+    if(this.debug){
+        var debug_msg = {}
+        debug_msg[resp_id] = JSON.parse(response)
+        console.log("response",debug_msg)
+    };
 
     // protocoll
     // fist 32 chars is request_id, rest is message
-    response = this.req_id + response
+    response = resp_id + response
     this.connector.socket.send(response)
+}
+event_callback(...results){
+    this.req_id = this.event_id
+    if(this.event_id && this.event_id[0] === "E"){this.send_back(...results)}
+    else{throw new TypeError('event_id isn\'t set or doesn\'t start with "E"')}
+}
+set_event_id(event_id){
+ if(event_id[0] === "E"){this.event_id = event_id}
+ else{throw new TypeError('event_id[0] needs to equal "E", but got: '+event_id)}
 }
 
 // structs
@@ -139,7 +165,7 @@ list(list){
     var results = [];
     list.forEach(function(item, index){
         results.push(this.eval(item))
-    });
+    }.bind(this));
     return results
 }
 
@@ -166,23 +192,37 @@ if_else(condition, statement, else_statement=undefined){
     return result
 }
 
-stringify(obj){
-    var result = JSON.stringify(obj, this.replacer.bind(this))
-    return result
-}
+stringify(object, depth=0, max_depth=2) {
+    function valid(value){
+        return !(typeof value === "function" || value == undefined || value == null || value === "")
+    }
 
-replacer(key, value) {
-  // Filtering out properties
-  if (this.isFunction(value)) {
-    this.status = "func_to_str"
-    return value.toLocaleString();
-  }
-  else if (value == undefined){
-    return null
-  }
-  else {
-    return value
-  }
+    // change max_depth to see more levels, for a touch event, 2 is good
+    if (depth > max_depth)
+        return 'Object';
+
+    var obj = undefined
+    if(Array.isArray(object)){
+        obj = []
+        object.forEach(function (item, index) {
+          if(item instanceof Object){item = this.stringify(item, depth+1, max_depth)}
+          if(valid(item)){obj.push(item)}
+        }.bind(this));
+    }
+    else{
+        obj = {};
+        for (let key in object) {
+            let value = object[key];
+            if (value instanceof globalThis.constructor)
+                value = globalThis.constructor.name;
+            else if (value instanceof Object)
+                value = this.stringify(value, depth+1, max_depth);
+
+            if(valid(value)){obj[key] = value;}
+        }
+    }
+
+    return depth? obj: JSON.stringify(obj);
 }
 
 op(op, a, b) {

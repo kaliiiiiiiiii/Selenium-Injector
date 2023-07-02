@@ -66,6 +66,35 @@ driver.get("https://whatismyipaddress.com/")
 driver.injector.proxy.clear()
 driver.quit()
 ```
+#### use events
+```python
+from selenium_injector.webdriver import Chrome
+import json
+
+from selenium_profiles.profiles import profiles
+profile = profiles.Android()
+
+driver = Chrome()
+
+driver.get("https://www.wikipedia.org/")
+
+t = driver.injector.socket.js.types
+
+event_id = driver.injector.socket.make_event_id()
+
+driver.injector.socket.exec(t.list([
+    t.set_event_id(event_id),
+    t.exec(
+        t.path("document.addEventListener"),
+        args=[t.value("click"), t.event_callback()]
+    )
+]), user="tab-0")
+
+event = driver.injector.socket.event(event_id, "tab-0")
+for e in event:  # will block forever
+    print(json.loads(e))
+```
+warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 
 
 ## Help
@@ -128,3 +157,4 @@ Inspiration, code snippets, etc.
 * [chrome-extension-docs](https://developer.chrome.com/docs/extensions/reference/)
 * [PEG-parser](https://github.com/pegjs/pegjs)
 * [make-SV-stayalive](https://stackoverflow.com/a/75082732/20443541)
+* [stringify-obj](https://stackoverflow.com/a/58416333/20443541)

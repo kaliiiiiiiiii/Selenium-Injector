@@ -40,6 +40,14 @@ class JS:
         def send_back(self):
             return self.path("send_back", obj=self.this())
 
+        def event_callback(self):
+            return self.path("event_callback", obj=self.this())
+
+        def set_event_id(self, event_id):
+            return self.exec(self.path("set_event_id", obj=self.this()),
+                             args=[self.value(event_id)]
+                             )
+
     class utils:
         def __init__(self, types):
             self.types = types

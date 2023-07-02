@@ -1,8 +1,28 @@
 import asyncio
 import queue
+from collections import defaultdict
 
 import websockets
 import websockets.server
+
+
+class event_iter(object):
+    def __init__(self, event_queue: queue.Queue, process: callable = None, intervall: float = 0.1):
+        self.queue = event_queue
+        self.process = process
+        self.intervall = intervall
+
+    def __iter__(self):
+        import time
+        while True:
+            try:
+                yield self.queue.get_nowait()
+            except queue.Empty:  # on python 2 use Queue.Empty
+                if self.process:
+                    self.process()
+                    time.sleep(self.intervall)
+                else:
+                    break
 
 
 class SynchronousWebsocketServer:
@@ -26,7 +46,9 @@ class SynchronousWebsocketServer:
             user = await websocket.recv()
         except websockets.exceptions.ConnectionClosedError:
             return
-        self.users[user] = {"ws": websocket, "rx": {}, "events": {}}
+        self.users[user] = {"ws": websocket, "rx": {},
+                            "events": defaultdict(lambda: event_iter(queue.Queue(), process=self.process))
+                            }
 
         # noinspection PyUnresolvedReferences
         try:
@@ -35,9 +57,7 @@ class SynchronousWebsocketServer:
                 resp_id = message[0:32]
 
                 if resp_id[0] == "E":  # is event
-                    if resp_id not in self.users[user]["events"]:
-                        self.users[user]["events"][resp_id] = queue.Queue()
-                    self.users[user]["events"][resp_id].put(response)
+                    self.users[user]["events"][resp_id].queue.put(response)
                 else:  # is response
                     if resp_id in self.users[user]["rx"]:
                         raise ConnectionError(f'allready got ["{user}"]["rx"]["{resp_id}"], dublicate response-id')
@@ -77,18 +97,34 @@ class SynchronousWebsocketServer:
         self.loop.run_until_complete(self.users[user]["ws"].send(message))
 
     def post(self, message: str, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
-        import uuid
+
         if not start_time:
             start_time = self.time
 
         # protocoll
         # fist 32 chars is request_id, rest is message
-        req_id = uuid.uuid4().hex
+        req_id = self.make_req_id()
         parsed = req_id + message
 
         self.send(message=parsed, user=user, timeout=timeout, start_time=start_time, intervall=intervall)
         response = self.recv(resp_id=req_id, user=user, timeout=timeout, start_time=start_time, intervall=intervall)
         return response
+
+    def make_req_id(self):
+        import uuid
+        return uuid.uuid4().hex
+
+    def make_event_id(self):
+        uuid = self.make_req_id()
+        return 'E' + uuid[1:]
+
+    def event(self, event_id: str, user: str, intervall: float = 0.1):
+        self.process()
+        if user in self.users:
+            event = self.users[user]["events"][event_id]
+            event.intervall = intervall
+            return event
+        raise LookupError("User not connected")
 
     def wait_user(self, user: str = None, timeout: int = 10, start_time=None, intervall: float = 0.1):
         if not start_time:
