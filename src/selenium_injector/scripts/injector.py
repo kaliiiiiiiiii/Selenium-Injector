@@ -22,7 +22,7 @@ def make_config(host: str, port: int, user: str, debug: bool or None = None):
 
 class Injector:
     def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3", temp_dir: str = None,
-                 debug: bool or None = None):
+                 debug: bool or None = None, mv: int = 3):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import read, write, sel_injector_path, random_port
 
@@ -30,6 +30,10 @@ class Injector:
             host = "localhost"
         if not port:
             port = random_port(host=host)
+
+        if [1, 2] not in mv:
+            raise ValueError(f"mv needs to be 1 or 2, but got {mv}")
+        self.mv = mv
 
         self.user = user
 
@@ -40,7 +44,7 @@ class Injector:
             self.path = sel_injector_path() + "files/tmp/injector_extension"
 
         background_js = read("files/extension/background.js")
-        manifest_json = read("files/extension/manifest.json")
+        manifest_json = read(f"files/extension/manifest_{mv}.json")
         self.connection_js = read("files/js/connection.js")
         write(self.path + "/background.js", background_js + self.connection_js + config, sel_root=False)
         write(self.path + "/manifest.json", manifest_json, sel_root=False)
