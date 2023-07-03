@@ -4,6 +4,7 @@ include LICENSE.md
 recursive-include tests test*.py
 graft src/selenium_injector/files/js
 graft src/selenium_injector/files/extension
-graft src/selenium_injector/files/tmp/injector_extension
+graft src/selenium_injector/files/tmp/mv2_extension
+graft src/selenium_injector/files/tmp/mv3_extension
 
 

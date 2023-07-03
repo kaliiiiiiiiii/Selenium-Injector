@@ -145,9 +145,10 @@ class Injector(base_driver):
 
     class proxy(base_driver):
         def __init__(self, socket, users):
+            super().__init__(socket=socket, users=users)
+
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
             self.auth_user = self.any_user
-            super().__init__(socket, users=users)
 
         def _get(self, timeout: int = 1):
             req = self.t.exec(func=self.t.path("proxy.get"), args=[self.t.send_back()])
