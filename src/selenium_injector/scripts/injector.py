@@ -81,6 +81,8 @@ class Injector(base_driver):
 
         if not user:
             user = f"selenium-injector-mv"
+        if not (mv2 or mv3):
+            raise ValueError("either mv3 or mv2 extension required")
 
         self.users = {}
         self.paths = []
