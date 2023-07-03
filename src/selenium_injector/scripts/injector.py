@@ -10,9 +10,9 @@ class base_driver:
 
     @property
     def any_user(self):
-        if self.users["mv3"]:
+        if "mv3" in self.users.keys():
             return self.users["mv3"]
-        elif self.users["mv2"]:
+        elif "mv2" in self.users.keys():
             return self.users["mv2"]
         else:
             raise ModuleNotFoundError("chrome not initialized with extensions")
