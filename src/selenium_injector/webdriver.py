@@ -29,7 +29,8 @@ class Chrome(BaseDriver):
 
         if "options" not in kwargs.keys():
             kwargs["options"] = ChromeOptions()
-        kwargs["options"].add_argument(f'--load-extension={self.injector.path}')
+
+        kwargs["options"].add_argument(f'--load-extension={",".join(self.injector.paths)}')
 
         super().__init__(**kwargs)
 
@@ -38,7 +39,7 @@ class Chrome(BaseDriver):
         self.injector.tab_user = "tab-" + tab_index
         config = make_config(self.injector.socket.host, self.injector.socket.port, self.injector.tab_user, debug=True)
         from selenium_injector.utils.utils import read
-        utils_js = read("files/js/utils.js")
+        utils_js = read("files/js/utils.js", sel_root=True)
         self.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
                              {"source": "(function(){%s})()" % (utils_js + self.injector.connection_js + config)})
 

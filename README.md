@@ -88,7 +88,7 @@ driver.injector.socket.exec(t.list([
         t.path("chrome.webRequest.onCompleted.addListener"),
         args=[t.event_callback(), t.value({"urls": ["<all_urls>"]})]
     )
-]), driver.injector.user, max_depth=1)
+]), driver.injector.any_user, max_depth=1)
 
 event = driver.injector.socket.event(event_id, driver.injector.user)
 for e in event:  # will block forever
@@ -107,7 +107,7 @@ Please feel free to open an issue or fork!
 ## Todo
 
 - [ ] eval within tab scope from extension
-- [ ] Add MV2 extension
+- [x] Add MV2 extension
   - [ ] change headers
 - [x] add events
   - [x] make protocoll use `UUIDS`'s

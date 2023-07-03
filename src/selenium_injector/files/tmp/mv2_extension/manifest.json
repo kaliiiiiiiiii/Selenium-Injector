@@ -1,15 +1,13 @@
 {
-  "manifest_version": 3,
-  "name": "selenium-injector",
+  "manifest_version": 2,
+  "name": "selenium-injector-mv2",
   "version": "1.0",
   "description": "executes code passed from selenium",
   "author": "aurin.aegerter@stud.gymthun.ch",
-  "background": {
-    "service_worker": "background.js", "type": "module"
+    "background": {
+    "persistent": true,
+    "scripts": ["background.js"]
   },
-  "content_security_policy": {
-   "extension_pages":"script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-    },
   "permissions": [
     "activeTab",
     "alarms",
@@ -25,7 +23,6 @@
     "debugger",
     "declarativeContent",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
     "declarativeNetRequestFeedback",
     "declarativeWebRequest",
     "desktopCapture",
@@ -48,7 +45,6 @@
     "management",
     "nativeMessaging",
     "notifications",
-    "offscreen",
     "pageCapture",
     "platformKeys",
     "power",
@@ -58,7 +54,6 @@
     "privacy",
     "processes",
     "proxy",
-    "scripting",
     "search",
     "sessions",
     "storage",
@@ -67,7 +62,6 @@
     "system.memory",
     "system.storage",
     "tabCapture",
-    "tabGroups",
     "tabs",
     "topSites",
     "tts",
@@ -77,8 +71,6 @@
     "wallpaper",
     "webNavigation",
     "webRequest",
-    "webRequestBlocking",
-    "webRequestAuthProvider"
-  ],
-  "host_permissions": ["<all_urls>"]
+    "webRequestBlocking"
+  ]
 }
