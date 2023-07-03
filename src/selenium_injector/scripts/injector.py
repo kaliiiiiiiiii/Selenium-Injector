@@ -110,10 +110,12 @@ class Injector(base_driver):
         self.exec_command = self.socket.exec_command
 
         # subclasses
-        self.proxy = self.proxy(socket=self.socket, users=self.users)
-        self.webrtc_leak = self.webrtc_leak(socket=self.socket, users=self.users)
-        self.contentsettings = self.contentsettings(socket=self.socket, users=self.users)
-        self.tabs = self.tabs(socket=self.socket, users=self.users)
+        kwargs = {"socket": self.socket, "users": self.users}
+        self.proxy = self.proxy(**kwargs)
+        self.webrtc_leak = self.webrtc_leak(**kwargs)
+        self.contentsettings = self.contentsettings(**kwargs)
+        self.tabs = self.tabs(**kwargs)
+        self.declarativeWebRequest = self.declarativeWebRequest(**kwargs)
 
     @property
     def connection_js(self):
@@ -144,8 +146,8 @@ class Injector(base_driver):
             return None
 
     class proxy(base_driver):
-        def __init__(self, socket, users):
-            super().__init__(socket=socket, users=users)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
 
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
             self.auth_user = self.any_user
@@ -224,10 +226,10 @@ class Injector(base_driver):
             self.clear_auth(timeout=timeout, start_time=start_time)
 
     class webrtc_leak(base_driver):
-        def __init__(self, socket, users):
+        def __init__(self, *args, **kwargs):
             self.supported_values = ["default", "default_public_and_private_interfaces",
                                      "default_public_interface_only", "disable_non_proxied_udp"]
-            super().__init__(socket, users)
+            super().__init__(*args, **kwargs)
 
         def disable(self, value="disable_non_proxied_udp", timeout=10):
             self.check_cmd(value, self.supported_values)
@@ -237,12 +239,12 @@ class Injector(base_driver):
             self.socket.exec_command("webrtc_leak.clear", timeout=timeout, user=self.any_user)
 
     class contentsettings(base_driver):
-        def __init__(self, socket, users):
+        def __init__(self, *args, **kwargs):
             self.supported_location_settings = ["ask", "allow", "block"]
             self.supported_settings = ["automaticDownloads", "autoVerify", "camera", "cookies", "fullscreen", "images",
                                        "javascript", "location", "microphone", "mouselock", "notifications", "plugins",
                                        "popups", "unsandboxedPlugins"]
-            super().__init__(socket, users)
+            super().__init__(*args, **kwargs)
 
         def set(self, setting, value, urls="<all_urls>", timeout=10):
             self.check_cmd(setting, self.supported_settings)
@@ -271,3 +273,85 @@ class Injector(base_driver):
                 return self.query({"active": True, "lastFocusedWindow": True})["result"][0][0]
             except IndexError:
                 return None
+
+    class declarativeWebRequest(base_driver):
+        def __init__(self, *args, **kwargs):
+            self._headers = {}
+            super().__init__(*args, **kwargs)
+
+        def update_dynamic_rules(self, add_rules: list = None, remove_ids: list = None):
+            rules = {}
+            if add_rules:
+                rules["addRules"] = add_rules
+            if remove_ids:
+                rules["removeRuleIds"] = remove_ids
+            if rules:
+                script = self.t.exec(self.t.path("chrome.declarativeNetRequest.updateDynamicRules"),
+                                     args=[self.t.value(rules), self.t.send_back()])
+                script.update(self.t.not_return)
+                self.socket.exec(script, user=self.mv3_user)
+
+        def update_headers(self, headers: dict):
+            keys_list = list(self._headers.keys())
+
+            id_dict = {}
+            id_lst = []
+            for key, value in self._headers.items():
+                id_ = value["id"]
+                id_dict[id_] = key
+                id_lst.append(id_)
+
+            rules = []
+            remove_ids = []
+            _headers = {}
+            for key, value in headers.items():
+                if key in keys_list:
+                    id_ = self._headers[key]["id"]
+                    remove_ids.append(id_)
+                else:
+                    if id_lst:
+                        id_ = max(id_lst)
+                    else:
+                        id_ = 1
+                    id_lst.append(id_)
+                    keys_list.append(key)
+                rules.append(
+                    {
+                        "id": id_,
+                        "priority": 1,
+                        "action": {
+                            "type": 'modifyHeaders',
+                            "requestHeaders": [
+                                {
+                                    "header": key,
+                                    "operation": 'set',
+                                    "value": value
+                                },
+                            ],
+                        },
+                        "condition": {
+                          "regexFilter": '|http*',
+                          "resourceTypes": [
+                            'main_frame',
+                            'sub_frame',
+                            'script'
+                          ],
+                        },
+                    }
+                )
+                _headers[key] = {"id": id_, "value": value}
+            self.update_dynamic_rules(add_rules=rules, remove_ids=remove_ids)
+            self._headers = _headers
+
+        @property
+        def dynamic_rules(self):
+            script = self.t.exec(func=self.t.path("chrome.declarativeNetRequest.getDynamicRules"),
+                                 args=[self.t.value({}), self.t.send_back()])
+            script.update(self.t.not_return)
+            dynamic_rules = {}
+            result = self.socket.exec(script, user=self.mv3_user, max_depth=5)["result"][0]
+            for rule in result:
+                dynamic_rules[rule["id"]] = rule
+            return dynamic_rules
+
+
