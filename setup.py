@@ -1,7 +1,7 @@
 import setuptools
 
 
-requirements = ['selenium', 'requests', "selenium_profiles", "websockets"]
+requirements = ['selenium', 'requests', "selenium_profiles>=2.2.7.2", "websockets"]
 
 with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
