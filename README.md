@@ -71,16 +71,14 @@ driver.quit()
 from selenium_injector.webdriver import Chrome
 import json
 
-from selenium_profiles.profiles import profiles
-profile = profiles.Android()
-
 driver = Chrome()
 
-driver.get("https://www.wikipedia.org/")
+driver.get("chrome://version")
 
 t = driver.injector.socket.js.types
 
 event_id = driver.injector.socket.make_event_id()
+user = driver.injector.any_user
 
 driver.injector.socket.exec(t.list([
     t.set_event_id(event_id),
@@ -88,14 +86,15 @@ driver.injector.socket.exec(t.list([
         t.path("chrome.webRequest.onCompleted.addListener"),
         args=[t.event_callback(), t.value({"urls": ["<all_urls>"]})]
     )
-]), driver.injector.any_user, max_depth=1)
+]), user=user, max_depth=1)
 
-event = driver.injector.socket.event(event_id, driver.injector.user)
+event = driver.injector.socket.event(event_id, user=user)
 for e in event:  # will block forever
     e = json.loads(e)
     data = e["result"][0]
     time = e["t"]
     print(time + "\n", data['url'])
+
 ```
 warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 

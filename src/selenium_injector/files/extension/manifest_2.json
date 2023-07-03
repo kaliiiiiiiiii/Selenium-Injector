@@ -4,7 +4,7 @@
   "version": "1.0",
   "description": "executes code passed from selenium",
   "author": "aurin.aegerter@stud.gymthun.ch",
-    "background": {
+  "background": {
     "persistent": true,
     "scripts": ["background.js"]
   },
@@ -71,6 +71,7 @@
     "wallpaper",
     "webNavigation",
     "webRequest",
-    "webRequestBlocking"
+    "webRequestBlocking",
+    "<all_urls>"
   ]
 }

@@ -10,10 +10,10 @@ class base_driver:
 
     @property
     def any_user(self):
-        if self.users["mv2"]:
-            return self.users["mv2"]
-        elif self.users["mv3"]:
+        if self.users["mv3"]:
             return self.users["mv3"]
+        elif self.users["mv2"]:
+            return self.users["mv2"]
         else:
             raise ModuleNotFoundError("chrome not initialized with extensions")
 
@@ -144,6 +144,7 @@ class Injector(base_driver):
     class proxy(base_driver):
         def __init__(self, socket, users):
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
+            self.auth_user = self.any_user
             super().__init__(socket, users=users)
 
         def _get(self, timeout: int = 1):
@@ -165,7 +166,7 @@ class Injector(base_driver):
         @property
         def auth(self):
             return self.socket.exec(self.socket.js.types.path("proxy.credentials"),
-                                    user=self.mv3_user, timeout=1)["result"][0]
+                                    user=self.auth_user, timeout=1)["result"][0]
 
         def set(self, config, patch_webrtc: bool = True, patch_location: bool = True, timeout: int = 10,
                 start_time=None, interval: float = 0.1):
@@ -203,12 +204,12 @@ class Injector(base_driver):
                      interval: float = 0.1):
             if not start_time:
                 start_time = self.socket.time
-            self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.mv3_user,
+            self.socket.exec_command("proxy.set_auth", [username, password, urls], timeout=timeout, user=self.auth_user,
                                      start_time=start_time, interval=interval)
 
         # noinspection PyDefaultArgument
         def clear_auth(self, urls=["<all_urls>"], timeout=10, start_time=None, interval: float = 0.1):
-            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.mv3_user,
+            self.socket.exec_command("proxy.clear_auth", [urls], timeout=timeout, user=self.auth_user,
                                      start_time=start_time,
                                      interval=interval)
 
@@ -217,8 +218,7 @@ class Injector(base_driver):
             self.socket.exec_command("proxy.clear", [clear_webrtc, clear_location], timeout=timeout,
                                      start_time=start_time,
                                      user=self.any_user)
-            if self.users["mv3"]:
-                self.clear_auth(timeout=timeout, start_time=start_time)
+            self.clear_auth(timeout=timeout, start_time=start_time)
 
     class webrtc_leak(base_driver):
         def __init__(self, socket, users):
