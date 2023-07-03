@@ -31,8 +31,8 @@ class Injector:
         if not port:
             port = random_port(host=host)
 
-        if [1, 2] not in mv:
-            raise ValueError(f"mv needs to be 1 or 2, but got {mv}")
+        if mv not in [2, 3]:
+            raise ValueError(f"mv needs to be 2 or 3, but got {mv}")
         self.mv = mv
 
         if not user:
@@ -45,10 +45,15 @@ class Injector:
         else:
             self.path = sel_injector_path() + "files/tmp/injector_extension"
 
-        background_js = read("files/extension/background.js")
-        manifest_json = read(f"files/extension/manifest_{mv}.json")
-        self.connection_js = read("files/js/connection.js")
-        write(self.path + "/background.js", background_js + self.connection_js + config, sel_root=False)
+        background_js = read("files/extension/background.js", sel_root=True)
+        manifest_json = read(f"files/extension/manifest_{mv}.json", sel_root=True)
+        self.connection_js = read("files/js/connection.js", sel_root=True)
+
+        background_js = background_js + self.connection_js + config
+        if self.mv == 3:
+            background_js = read("files/extension/stay_alive.js", sel_root=True) + background_js
+
+        write(self.path + "/background.js", background_js, sel_root=False)
         write(self.path + "/manifest.json", manifest_json, sel_root=False)
 
         self.socket = socket()
@@ -94,7 +99,7 @@ class Injector:
         def _get(self, timeout: int = 1):
             req = self.t.exec(func=self.t.path("proxy.get"), args=[self.t.send_back()])
             req.update(self.t.not_return)
-            return self.socket.exec(req, user=self.user, timeout=timeout)["result"][0]
+            return self.socket.exec(req, user=self.user, timeout=timeout, max_depth=4)["result"][0]
 
         @property
         def rules(self):
