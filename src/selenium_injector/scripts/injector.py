@@ -1,5 +1,5 @@
 class base_driver:
-    def __init__(self, socket, user: str):
+    def __init__(self, socket, user: str, mv:int):
         self.socket = socket
         self.user = user
         self.t = socket.js.types
@@ -63,10 +63,10 @@ class Injector:
         self.exec_command = self.socket.exec_command
 
         # subclasses
-        self.proxy = self.proxy(socket=self.socket, user=self.user)
-        self.webrtc_leak = self.webrtc_leak(socket=self.socket, user=self.user)
-        self.contentsettings = self.contentsettings(socket=self.socket, user=self.user)
-        self.tabs = self.tabs(socket=self.socket, user=self.user)
+        self.proxy = self.proxy(socket=self.socket, user=self.user, mv=self.mv)
+        self.webrtc_leak = self.webrtc_leak(socket=self.socket, user=self.user, mv=self.mv)
+        self.contentsettings = self.contentsettings(socket=self.socket, user=self.user, mv=self.mv)
+        self.tabs = self.tabs(socket=self.socket, user=self.user, mv=self.mv)
 
     @property
     def page_source(self):
@@ -92,9 +92,9 @@ class Injector:
             return None
 
     class proxy(base_driver):
-        def __init__(self, socket, user):
+        def __init__(self, socket, user, mv):
             self.supported_schemes = ["http", "https", "socks4", "socks5"]
-            super().__init__(socket, user=user)
+            super().__init__(socket, user=user, mv=mv)
 
         def _get(self, timeout: int = 1):
             req = self.t.exec(func=self.t.path("proxy.get"), args=[self.t.send_back()])
@@ -169,10 +169,10 @@ class Injector:
             self.clear_auth(timeout=timeout, start_time=start_time)
 
     class webrtc_leak(base_driver):
-        def __init__(self, socket, user):
+        def __init__(self, socket, user, mv):
             self.supported_values = ["default", "default_public_and_private_interfaces",
                                      "default_public_interface_only", "disable_non_proxied_udp"]
-            super().__init__(socket, user)
+            super().__init__(socket, user, mv=mv)
 
         def disable(self, value="disable_non_proxied_udp", timeout=10):
             self.check_cmd(value, self.supported_values)
@@ -182,12 +182,12 @@ class Injector:
             self.socket.exec_command("webrtc_leak.clear", timeout=timeout, user=self.user)
 
     class contentsettings(base_driver):
-        def __init__(self, socket, user):
+        def __init__(self, socket, user, mv):
             self.supported_location_settings = ["ask", "allow", "block"]
             self.supported_settings = ["automaticDownloads", "autoVerify", "camera", "cookies", "fullscreen", "images",
                                        "javascript", "location", "microphone", "mouselock", "notifications", "plugins",
                                        "popups", "unsandboxedPlugins"]
-            super().__init__(socket, user)
+            super().__init__(socket, user, mv=mv)
 
         def set(self, setting, value, urls="<all_urls>", timeout=10):
             self.check_cmd(setting, self.supported_settings)
