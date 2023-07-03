@@ -21,7 +21,7 @@ def make_config(host: str, port: int, user: str, debug: bool or None = None):
 
 
 class Injector:
-    def __init__(self, port: int = None, host: str = None, user="selenium-injector-mv3", temp_dir: str = None,
+    def __init__(self, port: int = None, host: str = None, user:str=None, temp_dir: str = None,
                  debug: bool or None = None, mv: int = 3):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import read, write, sel_injector_path, random_port
@@ -35,6 +35,8 @@ class Injector:
             raise ValueError(f"mv needs to be 1 or 2, but got {mv}")
         self.mv = mv
 
+        if not user:
+            user = f"selenium-injector-mv{mv}"
         self.user = user
 
         config = make_config(host, port, user, debug=debug)
