@@ -310,35 +310,34 @@ class Injector(base_driver):
                     remove_ids.append(id_)
                 else:
                     if id_lst:
-                        id_ = max(id_lst)
+                        id_ = max(id_lst) + 1  # todo: pick lowest value not in id_lst and positive
                     else:
                         id_ = 1
                     id_lst.append(id_)
                     keys_list.append(key)
-                rules.append(
-                    {
-                        "id": id_,
-                        "priority": 1,
-                        "action": {
-                            "type": 'modifyHeaders',
-                            "requestHeaders": [
-                                {
+                if value:
+                    rules.append(
+                        {
+                            "id": id_,
+                            "priority": 1,
+                            "action": {
+                                "type": 'modifyHeaders',
+                                "requestHeaders": [{
                                     "header": key,
                                     "operation": 'set',
-                                    "value": value
-                                },
-                            ],
-                        },
-                        "condition": {
-                          "regexFilter": '|http*',
-                          "resourceTypes": [
-                            'main_frame',
-                            'sub_frame',
-                            'script'
-                          ],
-                        },
-                    }
-                )
+                                    "value": value}],
+                            },
+                            "condition": {
+                                "regexFilter": '|http*',
+                                "resourceTypes": [
+                                    "main_frame", "sub_frame", "stylesheet",
+                                    "script", "image", "font", "object",
+                                    "xmlhttprequest", "ping", "csp_report",
+                                    "media", "websocket", "webtransport",
+                                    "webbundle", "other", ],
+                            },
+                        }
+                    )
                 _headers[key] = {"id": id_, "value": value}
             self.update_dynamic_rules(add_rules=rules, remove_ids=remove_ids)
             self._headers = _headers
@@ -353,5 +352,3 @@ class Injector(base_driver):
             for rule in result:
                 dynamic_rules[rule["id"]] = rule
             return dynamic_rules
-
-

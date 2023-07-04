@@ -94,10 +94,23 @@ for e in event:  # will block forever
     data = e["result"][0]
     time = e["t"]
     print(time + "\n", data['url'])
-
 ```
 warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 
+#### modify headers
+```python
+from selenium_injector.webdriver import Chrome
+
+driver = Chrome(injector_options={"mv2": True, "mv3": True})
+
+x = driver.injector.declarativeWebRequest.update_headers({"test": "test_2", "sec-ch-ua-platform":"Android"})
+rules = driver.injector.declarativeWebRequest.dynamic_rules
+
+driver.get("https://www.whatismybrowser.com/detect/what-http-headers-is-my-browser-sending")
+
+driver.quit()
+```
+note: this is only experimental yet (not included in pypi package)
 
 ## Help
 
