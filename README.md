@@ -100,6 +100,7 @@ warning: as `driver.quit()` isn't called in this example, it will leave files in
 #### modify network requests
 note: this is only experimental yet (not included in pypi package)
 
+example script
 ```python
 from selenium_injector.webdriver import Chrome
 
@@ -119,6 +120,36 @@ driver.injector.declarativeNetRequest.update_block_on(resource_types=["image"])
 driver.get("https://www.wikimedia.org/")
 
 input("press ENTER to exit")
+driver.quit()
+```
+
+#### use chrome-developer-protocoll
+note: this is only experimental yet (not included in pypi package)
+
+example script
+```python
+import json
+from selenium_injector.webdriver import Chrome
+
+driver = Chrome()
+
+dbg = driver.injector.debugger
+dbg.attach()
+dbg.execute("Console.enable")
+
+events = dbg.on_event()
+
+driver.execute_script("console.log('Hello World!')")
+
+for event in events:
+    event = json.loads(event)
+    result = event["result"]
+    time = event["t"]
+    if result[1] == 'Console.messageAdded':
+        message_text = result[2]["message"]["text"]
+        print(time, message_text)
+        break
+
 driver.quit()
 ```
 

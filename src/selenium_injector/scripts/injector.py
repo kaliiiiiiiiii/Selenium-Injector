@@ -1,8 +1,9 @@
 class base_injector:
-    def __init__(self, socket, users: dict):
+    def __init__(self, socket, users: dict, injector):
         self.socket = socket
         self.users = users
         self.t = socket.js.types
+        self.injector = injector
 
     def check_cmd(self, value, values):
         if value not in values:
@@ -110,13 +111,14 @@ class Injector(base_injector):
         self.exec_command = self.socket.exec_command
 
         # subclasses
-        kwargs = {"socket": self.socket, "users": self.users}
+        kwargs = {"socket": self.socket, "users": self.users, "injector": self}
         self.proxy = self.proxy(**kwargs)
         self.webrtc_leak = self.webrtc_leak(**kwargs)
         self.contentsettings = self.contentsettings(**kwargs)
         self.tabs = self.tabs(**kwargs)
         self.declarativeNetRequest = self.declarativeNetRequest(**kwargs)
         self.cookies = self.cookies(**kwargs)
+        self.debugger = self.debugger(**kwargs)
 
     @property
     def connection_js(self):
@@ -298,8 +300,7 @@ class Injector(base_injector):
             if rules:
                 script = self.t.exec(self.t.path("chrome.declarativeNetRequest.updateDynamicRules"),
                                      args=[self.t.value(rules), self.t.send_back()])
-                script.update(self.t.not_return)
-                self.socket.exec(script, user=self.any_user)
+                self.socket.exec_async(script, user=self.any_user)
 
         def update_headers(self, headers: dict, resource_types=None, url_filter='*'):
 
@@ -362,9 +363,8 @@ class Injector(base_injector):
         def dynamic_rules(self):
             script = self.t.exec(func=self.t.path("chrome.declarativeNetRequest.getDynamicRules"),
                                  args=[self.t.value({}), self.t.send_back()])
-            script.update(self.t.not_return)
             dynamic_rules = {}
-            result = self.socket.exec(script, user=self.any_user, max_depth=5)["result"][0]
+            result = self.socket.exec_async(script, user=self.any_user, max_depth=5)["result"][0]
             for rule in result:
                 dynamic_rules[rule["id"]] = rule
             return dynamic_rules
@@ -377,8 +377,7 @@ class Injector(base_injector):
         def _get(self, cookie_details: dict):
             script = self.t.exec(
                 self.t.path("chrome.cookies.get"), args=[self.t.value(cookie_details), self.t.send_back()])
-            script.update(self.t.not_return)
-            return self.socket.exec(script, user=self.any_user)["result"]
+            return self.socket.exec_async(script, user=self.any_user)["result"]
 
         def get_cookie(self, name: str, url: str = None):
             cookie_details = {"name": name}
@@ -394,8 +393,7 @@ class Injector(base_injector):
         def add_cookies(self, cookie_details: dict):
             script = self.t.exec(
                 self.t.path("chrome.cookies.set"), args=[self.t.value(cookie_details), self.t.send_back()])
-            script.update(self.t.not_return)
-            return self.socket.exec(script, user=self.any_user)["result"]
+            return self.socket.exec_async(script, user=self.any_user)["result"]
 
         def get_cookies(self, domain: str = None):
             details = {}
@@ -403,8 +401,12 @@ class Injector(base_injector):
                 details["domain"] = domain
             script = self.t.exec(
                 self.t.path("chrome.cookies.getAll"), args=[self.t.value(details), self.t.send_back()])
-            script.update(self.t.not_return)
-            return self.socket.exec(script, user=self.any_user)["result"][0]
+            return self.socket.exec_async(script, user=self.any_user)["result"][0]
+
+        def _remove(self, cookie_details):
+            script = self.t.exec(
+                self.t.path("chrome.cookies.remove"), args=[self.t.value(cookie_details), self.t.send_back()])
+            return self.socket.exec_async(script, user=self.any_user)["result"][0]
 
         def delete_cookie(self, name: str, url: str = None):
             cookie_details = {"name": name}
@@ -419,12 +421,6 @@ class Injector(base_injector):
                         results.append(self._remove(cookie_details))
                 return results
 
-        def _remove(self, cookie_details):
-            script = self.t.exec(
-                self.t.path("chrome.cookies.remove"), args=[self.t.value(cookie_details), self.t.send_back()])
-            script.update(self.t.not_return)
-            return self.socket.exec(script, user=self.any_user)["result"][0]
-
         def delete_all_cookies(self, domain: str = None):
             results = []
             for cookie in self.get_cookies(domain=domain):
@@ -432,3 +428,102 @@ class Injector(base_injector):
                 result = self.delete_cookie(cookie["name"], url=url)
                 results.append(result)
             return results
+
+    class debugger(base_injector):
+        def __init__(self, *args, **kwargs):
+            self.required_version = "1.2"
+            self.event_id = None
+            self.debug_user = None
+            self.available_methods = ["Accessibility", "Audits", "CacheStorage",
+                                      "Console", "CSS", "Database", "Debugger",
+                                      "DOM", "DOMDebugger", "DOMSnapshot", "Emulation",
+                                      "Fetch", "IO", "Input", "Inspector", "Log",
+                                      "Network", "Overlay", "Page", "Performance",
+                                      "Profiler", "Runtime", "Storage", "Target",
+                                      "Tracing", "WebAudio", "WebAuthn"]
+            super().__init__(*args, **kwargs)
+
+        def _target(self, tab_id: str = None, target_id: str = None, attached=True):
+            target = {}
+            if target_id:
+                target["targetId"] = target_id
+                return target
+            elif tab_id:
+                target["tabId"] = tab_id
+                return target
+            else:
+                active_tab = self.injector.tabs.active_tab
+                if active_tab:
+                    active_tab_id = active_tab["id"]
+                    target["tabId"] = active_tab_id
+                    if not attached:
+                        return target
+
+                    for i in self.targets:
+                        if 'tabId' in i.keys() and i['tabId'] == active_tab_id and i['attached']:
+                            return target
+                    self.attach(active_tab_id)
+            raise LookupError("No attached Target found")
+
+        def attach(self, tab_id: str = None, target_id: str = None, target:dict=None):
+            if not target:
+                target = self._target(tab_id, target_id, attached=False)
+            if not self.debug_user:
+                self.debug_user = self.any_user
+
+            script = self.t.exec(self.t.path("chrome.debugger.attach"), args=[
+                self.t.value(target), self.t.value(self.required_version),
+                self.t.send_back()])
+            return self.socket.exec_async(script, user=self.debug_user)["result"]
+
+        def detach(self, tab_id: str = None, target_id: str = None):
+            if not self.debug_user:
+                raise TypeError("not attached to any targets yet")
+            target = self._target(tab_id, target_id)
+            script = self.t.exec(self.t.path("chrome.debugger.detach"), args=[
+                self.t.value(target),
+                self.t.send_back()])
+            return self.socket.exec_async(script, user=self.debug_user)["result"]
+
+        def execute(self, method: str, params: dict = None, tab_id: str = None, target_id: str = None):
+            if not self.debug_user:
+                self.debug_user = self.any_user
+            self.check_cmd(method.split(".")[0], self.available_methods)
+            if not params:
+                params = {}
+            target = self._target(tab_id, target_id)
+            script = self.t.exec(self.t.path("chrome.debugger.sendCommand"), args=[
+                self.t.value(target), self.t.value(method), self.t.value(params),
+                self.t.send_back()])
+            try:
+                return self.socket.exec_async(script, user=self.debug_user)["result"][0]
+            except IndexError:
+                self.attach(target=target)
+                try:
+                    return self.socket.exec_async(script, user=self.debug_user)["result"][0]
+                except IndexError:
+                    raise RuntimeError("Couldn't get result, you might check the extension-console")
+
+        def on_event(self):
+            if not self.debug_user:
+                self.debug_user = self.any_user
+            if not self.event_id:
+                self.event_id = self.socket.make_event_id()
+
+                self.socket.exec(self.t.list([
+                    self.t.set_event_id(self.event_id),
+                    self.t.exec(
+                        self.t.path("chrome.debugger.onEvent.addListener"),
+                        args=[self.t.event_callback()]
+                    )
+                ]), user=self.debug_user)
+
+            event = self.socket.event(self.event_id, user=self.debug_user)
+            return event
+
+        @property
+        def targets(self):
+            if not self.debug_user:
+                self.debug_user = self.any_user
+            script = self.t.exec(self.t.path("chrome.debugger.getTargets"), args=[self.t.send_back()])
+            return self.socket.exec_async(script, user=self.debug_user)["result"][0]
