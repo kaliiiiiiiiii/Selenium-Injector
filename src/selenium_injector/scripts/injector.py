@@ -1,4 +1,4 @@
-class base_driver:
+class base_injector:
     def __init__(self, socket, users: dict):
         self.socket = socket
         self.users = users
@@ -62,7 +62,7 @@ def make_extension(path: str, user: str, host: str, port: int, debug: bool, mv: 
     return path
 
 
-class Injector(base_driver):
+class Injector(base_injector):
     # noinspection PyMissingConstructor
     def __init__(self, port: int = None, host: str = None, user: str = None, temp_dir: str = None,
                  debug: bool or None = None, mv2: bool = True, mv3: bool = True):
@@ -116,6 +116,7 @@ class Injector(base_driver):
         self.contentsettings = self.contentsettings(**kwargs)
         self.tabs = self.tabs(**kwargs)
         self.declarativeNetRequest = self.declarativeNetRequest(**kwargs)
+        self.cookies = self.cookies(**kwargs)
 
     @property
     def connection_js(self):
@@ -145,7 +146,7 @@ class Injector(base_driver):
         except TimeoutError:
             return None
 
-    class proxy(base_driver):
+    class proxy(base_injector):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -225,7 +226,7 @@ class Injector(base_driver):
                                      user=self.any_user)
             self.clear_auth(timeout=timeout, start_time=start_time)
 
-    class webrtc_leak(base_driver):
+    class webrtc_leak(base_injector):
         def __init__(self, *args, **kwargs):
             self.supported_values = ["default", "default_public_and_private_interfaces",
                                      "default_public_interface_only", "disable_non_proxied_udp"]
@@ -238,7 +239,7 @@ class Injector(base_driver):
         def clear(self, timeout=10):
             self.socket.exec_command("webrtc_leak.clear", timeout=timeout, user=self.any_user)
 
-    class contentsettings(base_driver):
+    class contentsettings(base_injector):
         def __init__(self, *args, **kwargs):
             self.supported_location_settings = ["ask", "allow", "block"]
             self.supported_settings = ["automaticDownloads", "autoVerify", "camera", "cookies", "fullscreen", "images",
@@ -255,7 +256,7 @@ class Injector(base_driver):
             self.socket.exec_command("contentsettings.set_location", [setting, urls], timeout=timeout,
                                      user=self.any_user)
 
-    class tabs(base_driver):
+    class tabs(base_injector):
         def query(self, query=None, timeout=5):
             if not query:
                 query = {}
@@ -274,7 +275,7 @@ class Injector(base_driver):
             except IndexError:
                 return None
 
-    class declarativeNetRequest(base_driver):
+    class declarativeNetRequest(base_injector):
         def __init__(self, *args, **kwargs):
             self._headers = {}
             self._block_on = {}
@@ -367,3 +368,67 @@ class Injector(base_driver):
             for rule in result:
                 dynamic_rules[rule["id"]] = rule
             return dynamic_rules
+
+    class cookies(base_injector):
+
+        def domain2url(self, domain: str):
+            return "https://" + domain
+
+        def _get(self, cookie_details: dict):
+            script = self.t.exec(
+                self.t.path("chrome.cookies.get"), args=[self.t.value(cookie_details), self.t.send_back()])
+            script.update(self.t.not_return)
+            return self.socket.exec(script, user=self.any_user)["result"]
+
+        def get_cookie(self, name: str, url: str = None):
+            cookie_details = {"name": name}
+            if url:
+                cookie_details["url"] = url
+                return self._get(cookie_details)["result"][0]
+            else:
+                for cookie in self.get_cookies():
+                    if cookie["name"] == name:
+                        cookie_details["url"] = self.domain2url(cookie["domain"])
+                        return self._get(cookie_details)
+
+        def add_cookies(self, cookie_details: dict):
+            script = self.t.exec(
+                self.t.path("chrome.cookies.set"), args=[self.t.value(cookie_details), self.t.send_back()])
+            script.update(self.t.not_return)
+            return self.socket.exec(script, user=self.any_user)["result"]
+
+        def get_cookies(self, domain: str = None):
+            details = {}
+            if domain:
+                details["domain"] = domain
+            script = self.t.exec(
+                self.t.path("chrome.cookies.getAll"), args=[self.t.value(details), self.t.send_back()])
+            script.update(self.t.not_return)
+            return self.socket.exec(script, user=self.any_user)["result"][0]
+
+        def delete_cookie(self, name: str, url: str = None):
+            cookie_details = {"name": name}
+            if url:
+                cookie_details["url"] = url
+                return self._remove(cookie_details)
+            else:
+                results = []
+                for cookie in self.get_cookies():
+                    if cookie["name"] == name:
+                        cookie_details["url"] = self.domain2url(cookie["domain"])
+                        results.append(self._remove(cookie_details))
+                return results
+
+        def _remove(self, cookie_details):
+            script = self.t.exec(
+                self.t.path("chrome.cookies.remove"), args=[self.t.value(cookie_details), self.t.send_back()])
+            script.update(self.t.not_return)
+            return self.socket.exec(script, user=self.any_user)["result"][0]
+
+        def delete_all_cookies(self, domain: str = None):
+            results = []
+            for cookie in self.get_cookies(domain=domain):
+                url = self.domain2url(cookie["domain"])
+                result = self.delete_cookie(cookie["name"], url=url)
+                results.append(result)
+            return results
