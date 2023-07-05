@@ -277,7 +277,9 @@ class Injector(base_driver):
     class declarativeNetRequest(base_driver):
         def __init__(self, *args, **kwargs):
             self._headers = {}
+            self._block_on = {}
             self._header_rule_id = 1
+            self._block_rule_id = 2
             self.all_resource_types = [
                 "main_frame", "sub_frame", "stylesheet",
                 "script", "image", "font", "object",
@@ -298,11 +300,14 @@ class Injector(base_driver):
                 script.update(self.t.not_return)
                 self.socket.exec(script, user=self.any_user)
 
-        def update_headers(self, headers: dict, resource_types=None, regex_filter='|http*'):
+        def update_headers(self, headers: dict, resource_types=None, url_filter='*'):
+
             _headers = [self._headers][0]
             _headers.update(headers)
 
-            if not resource_types:
+            if resource_types:
+                self._check_resource_types(resource_types)
+            else:
                 resource_types = self.all_resource_types
 
             request_headers = []
@@ -321,12 +326,36 @@ class Injector(base_driver):
                     "requestHeaders": request_headers,
                 },
                 "condition": {
-                    "regexFilter": regex_filter,
+                    "urlFilter": url_filter,
                     "resourceTypes": resource_types,
                 },
             }
             self.update_dynamic_rules(add_rules=[rule], remove_ids=[self._header_rule_id])
             self._headers = _headers
+
+        def update_block_on(self, url_filter="*", resource_types=None):
+            self._check_resource_types(resource_types)
+            if resource_types:
+                self._check_resource_types(resource_types)
+            else:
+                resource_types = self.all_resource_types
+            rule = {
+                "id": self._block_rule_id,
+                "priority": 1,
+                "action": {
+                    "type": "block",
+                },
+                "condition": {
+                    "urlFilter": url_filter,
+                    "resourceTypes": resource_types,
+                },
+            }
+            self.update_dynamic_rules(add_rules=[rule], remove_ids=[self._block_rule_id])
+            self._block_on = {"url_filter": url_filter, "resource_types": resource_types}
+
+        def _check_resource_types(self, resource_types):
+            for type_ in resource_types:
+                self.check_cmd(type_, self.all_resource_types)
 
         @property
         def dynamic_rules(self):

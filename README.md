@@ -97,17 +97,25 @@ for e in event:  # will block forever
 ```
 warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 
-#### modify headers
+#### modify network requests
+
 ```python
 from selenium_injector.webdriver import Chrome
 
 driver = Chrome()
 
+# modify headers
 driver.injector.declarativeNetRequest.update_headers({"test": "test_2", "sec-ch-ua-platform": "Android"})
 rules = driver.injector.declarativeNetRequest.dynamic_rules
 headers = driver.injector.declarativeNetRequest._headers
 
 driver.get("https://httpbin.org/headers")
+input("press ENTER to continue")
+
+# block images
+driver.injector.declarativeNetRequest.update_block_on(resource_types=["image"])
+
+driver.get("https://www.wikimedia.org/")
 
 input("press ENTER to exit")
 driver.quit()
