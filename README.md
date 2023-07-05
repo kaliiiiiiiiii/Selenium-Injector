@@ -101,13 +101,15 @@ warning: as `driver.quit()` isn't called in this example, it will leave files in
 ```python
 from selenium_injector.webdriver import Chrome
 
-driver = Chrome(injector_options={"mv2": True, "mv3": True})
+driver = Chrome()
 
-x = driver.injector.declarativeWebRequest.update_headers({"test": "test_2", "sec-ch-ua-platform":"Android"})
-rules = driver.injector.declarativeWebRequest.dynamic_rules
+driver.injector.declarativeNetRequest.update_headers({"test": "test_2", "sec-ch-ua-platform": "Android"})
+rules = driver.injector.declarativeNetRequest.dynamic_rules
+headers = driver.injector.declarativeNetRequest._headers
 
-driver.get("https://www.whatismybrowser.com/detect/what-http-headers-is-my-browser-sending")
+driver.get("https://httpbin.org/headers")
 
+input("press ENTER to exit")
 driver.quit()
 ```
 note: this is only experimental yet (not included in pypi package)

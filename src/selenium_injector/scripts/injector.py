@@ -115,7 +115,7 @@ class Injector(base_driver):
         self.webrtc_leak = self.webrtc_leak(**kwargs)
         self.contentsettings = self.contentsettings(**kwargs)
         self.tabs = self.tabs(**kwargs)
-        self.declarativeWebRequest = self.declarativeWebRequest(**kwargs)
+        self.declarativeNetRequest = self.declarativeNetRequest(**kwargs)
 
     @property
     def connection_js(self):
@@ -274,9 +274,16 @@ class Injector(base_driver):
             except IndexError:
                 return None
 
-    class declarativeWebRequest(base_driver):
+    class declarativeNetRequest(base_driver):
         def __init__(self, *args, **kwargs):
             self._headers = {}
+            self._header_rule_id = 1
+            self.all_resource_types = [
+                "main_frame", "sub_frame", "stylesheet",
+                "script", "image", "font", "object",
+                "xmlhttprequest", "ping", "csp_report",
+                "media", "websocket", "webtransport",
+                "webbundle", "other"]
             super().__init__(*args, **kwargs)
 
         def update_dynamic_rules(self, add_rules: list = None, remove_ids: list = None):
@@ -289,57 +296,36 @@ class Injector(base_driver):
                 script = self.t.exec(self.t.path("chrome.declarativeNetRequest.updateDynamicRules"),
                                      args=[self.t.value(rules), self.t.send_back()])
                 script.update(self.t.not_return)
-                self.socket.exec(script, user=self.mv3_user)
+                self.socket.exec(script, user=self.any_user)
 
-        def update_headers(self, headers: dict):
-            keys_list = list(self._headers.keys())
+        def update_headers(self, headers: dict, resource_types=None, regex_filter='|http*'):
+            _headers = [self._headers][0]
+            _headers.update(headers)
 
-            id_dict = {}
-            id_lst = []
-            for key, value in self._headers.items():
-                id_ = value["id"]
-                id_dict[id_] = key
-                id_lst.append(id_)
+            if not resource_types:
+                resource_types = self.all_resource_types
 
-            rules = []
-            remove_ids = []
-            _headers = {}
-            for key, value in headers.items():
-                if key in keys_list:
-                    id_ = self._headers[key]["id"]
-                    remove_ids.append(id_)
-                else:
-                    if id_lst:
-                        id_ = max(id_lst) + 1  # todo: pick lowest value not in id_lst and positive
-                    else:
-                        id_ = 1
-                    id_lst.append(id_)
-                    keys_list.append(key)
+            request_headers = []
+            for key, value in _headers.items():
                 if value:
-                    rules.append(
-                        {
-                            "id": id_,
-                            "priority": 1,
-                            "action": {
-                                "type": 'modifyHeaders',
-                                "requestHeaders": [{
-                                    "header": key,
-                                    "operation": 'set',
-                                    "value": value}],
-                            },
-                            "condition": {
-                                "regexFilter": '|http*',
-                                "resourceTypes": [
-                                    "main_frame", "sub_frame", "stylesheet",
-                                    "script", "image", "font", "object",
-                                    "xmlhttprequest", "ping", "csp_report",
-                                    "media", "websocket", "webtransport",
-                                    "webbundle", "other", ],
-                            },
-                        }
-                    )
-                _headers[key] = {"id": id_, "value": value}
-            self.update_dynamic_rules(add_rules=rules, remove_ids=remove_ids)
+                    request_headers.append({
+                        "header": key,
+                        "operation": 'set',
+                        "value": value})
+
+            rule = {
+                "id": self._header_rule_id,
+                "priority": 1,
+                "action": {
+                    "type": 'modifyHeaders',
+                    "requestHeaders": request_headers,
+                },
+                "condition": {
+                    "regexFilter": regex_filter,
+                    "resourceTypes": resource_types,
+                },
+            }
+            self.update_dynamic_rules(add_rules=[rule], remove_ids=[self._header_rule_id])
             self._headers = _headers
 
         @property
@@ -348,7 +334,7 @@ class Injector(base_driver):
                                  args=[self.t.value({}), self.t.send_back()])
             script.update(self.t.not_return)
             dynamic_rules = {}
-            result = self.socket.exec(script, user=self.mv3_user, max_depth=5)["result"][0]
+            result = self.socket.exec(script, user=self.any_user, max_depth=5)["result"][0]
             for rule in result:
                 dynamic_rules[rule["id"]] = rule
             return dynamic_rules
