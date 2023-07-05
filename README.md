@@ -98,6 +98,7 @@ for e in event:  # will block forever
 warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 
 #### modify network requests
+note: this is only experimental yet (not included in pypi package)
 
 ```python
 from selenium_injector.webdriver import Chrome
@@ -120,7 +121,6 @@ driver.get("https://www.wikimedia.org/")
 input("press ENTER to exit")
 driver.quit()
 ```
-note: this is only experimental yet (not included in pypi package)
 
 ## Help
 
