@@ -2,6 +2,13 @@ from selenium_injector.scripts.sync_websocket import SynchronousWebsocketServer
 from selenium_injector.scripts.js import JS
 
 
+class JSEvalException(Exception):
+    def __init__(self, message, stack):
+        super().__init__(stack)
+        self.message = message
+        self.stack = stack
+
+
 class socket(SynchronousWebsocketServer):
     def __init__(self):
         self.js = JS()
@@ -20,7 +27,9 @@ class socket(SynchronousWebsocketServer):
         result = self.post(json.dumps(script), user=user, timeout=timeout, start_time=start_time, interval=interval)
         result = json.loads(result)
         if result["status"] == "error":
-            raise Exception(result["result"][0]["stack"])
+            message = result["result"][0]["message"]
+            stack = result["result"][0]["stack"]
+            raise JSEvalException(message, stack)
         return result
 
     def exec_async(self, script: dict, user: str = None, max_depth=2, timeout: int = 10, start_time=None,

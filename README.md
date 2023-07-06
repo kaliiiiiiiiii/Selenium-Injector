@@ -25,10 +25,10 @@
 #### click on element
 ```python
 from selenium_injector.webdriver import Chrome
+from selenium_injector.scripts.socket import JSEvalException
 
-# base driver to use
-# from selenium.webdriver import Chrome as base_driver
 from undetected_chromedriver import Chrome as base_driver
+
 
 driver = Chrome(base_drivers=(base_driver,))
 
@@ -44,9 +44,13 @@ try:
     driver.injector.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.injector.tab_user, timeout=2)
 except TimeoutError as e:
     if driver.current_url != prev_url:
-        pass # new page loaded before send_response
+        pass  # new page loaded before send_response
     else:
         raise e
+except JSEvalException as e:
+    if e.message == 'Element by XPATH://*[@id="js-link-box-en"]/strong not found!':
+        pass # do some handling
+    raise e
 
 driver.quit()
 ```
