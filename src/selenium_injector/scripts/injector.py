@@ -1,3 +1,10 @@
+class UserNotFound(Exception):
+    def __init__(self, message, user: str = None):
+        super().__init__(message)
+        if user:
+            self.user = user
+
+
 class base_injector:
     def __init__(self, socket, users: dict, injector):
         self.socket = socket
@@ -16,21 +23,21 @@ class base_injector:
         elif "mv2" in self.users.keys():
             return self.users["mv2"]
         else:
-            raise ModuleNotFoundError("chrome not initialized with extensions")
+            raise UserNotFound("chrome not initialized with extensions")
 
     @property
     def mv3_user(self):
         if "mv3" in self.users.keys():
             return self.users["mv3"]
         else:
-            raise ModuleNotFoundError("Chrome not initialized with mv3-extension")
+            raise UserNotFound("Chrome not initialized with mv3-extension")
 
     @property
     def mv2_user(self):
         if "mv2" in self.users.keys():
             return self.users["mv2"]
         else:
-            raise ModuleNotFoundError("Chrome not initialized with mv2-extension")
+            raise UserNotFound("Chrome not initialized with mv2-extension")
 
 
 def make_config(host: str, port: int, user: str, debug: bool or None = None):
@@ -119,7 +126,6 @@ class Injector(base_injector):
         self.declarativeNetRequest = self.declarativeNetRequest(**kwargs)
         self.cookies = self.cookies(**kwargs)
         self.debugger = self.debugger(**kwargs)
-        self.scripting = self.scripting(**kwargs)
 
     @property
     def connection_js(self):
@@ -128,12 +134,17 @@ class Injector(base_injector):
 
     @property
     def page_source(self):
+        from selenium_injector.scripts.socket import JSEvalException
+        if "mv2" not in self.users:
+            raise NotImplementedError("getting the page source only with mv2 implemented yet")
         try:
-            return self.socket.exec(self.socket.js.types.path("document.documentElement.outerHTML"),
-                                    user="tab-0", timeout=1)["result"][0]
-        except TimeoutError:
-            # 'data:,' startup url
-            return '<html><head></head><body></body></html>'
+            result = self.tabs.eval_str("document.documentElement.outerHTML", self.tabs.active_tab["id"])
+        except JSEvalException as e:
+            if e.message == 'Cannot access contents of url "data:,". Extension manifest must request permission to access this host.':
+                return '<html><head></head><body></body></html>'
+            else:
+                raise e
+        return result[0]
 
     @property
     def current_url(self):
@@ -266,6 +277,23 @@ class Injector(base_injector):
             return self.socket.exec_async(script={"type": "exec", "func": {"type": "path", "path": "chrome.tabs.query"},
                                                   "args": [{"type": "val", 'val': query}, self.socket.send_back]
                                                   }, user=self.any_user, timeout=timeout)
+
+        def eval_str(self, code, tab_id):
+            users = self.injector.users
+            if "mv2" in users:
+                result = self.socket.exec_async(self.t.exec(self.t.path("chrome.tabs.executeScript"), args=[
+                    self.t.value(tab_id),
+                    self.t.value({"code": code}),
+                    self.t.send_back()
+                ]), user=users["mv2"])
+                return result["result"][0]
+            elif "mv3" in users:
+                self.socket.exec_command("scripting.mv3_eval_str", [
+                    code,
+                    {"tabId": tab_id}
+                ], user=users["mv3"])
+            else:
+                raise UserNotFound("chrome not initialized with extensions")
 
         @property
         def all_tabs(self):
@@ -521,21 +549,3 @@ class Injector(base_injector):
                 self.debug_user = self.any_user
             script = self.t.exec(self.t.path("chrome.debugger.getTargets"), args=[self.t.send_back()])
             return self.socket.exec_async(script, user=self.debug_user)["result"][0]
-
-    class scripting(base_injector):
-        def eval_str(self, code, tab_id):
-            users = self.injector.users
-            if "mv2" in users:
-                result = self.socket.exec_async(self.t.exec(self.t.path("chrome.tabs.executeScript"), args=[
-                    self.t.value(tab_id),
-                    self.t.value({"code": code}),
-                    self.t.send_back()
-                ]), user=users["mv2"])
-                return result["result"][0]
-            elif "mv3" in users:
-                self.socket.exec_command("scripting.mv3_eval_str", [
-                    code,
-                    {"tabId": tab_id}
-                ], user=users["mv3"])
-            else:
-                raise ModuleNotFoundError("chrome not initialized with extensions")

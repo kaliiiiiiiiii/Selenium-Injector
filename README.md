@@ -167,7 +167,7 @@ driver = Chrome(injector_options={"mv2":True, "mv3":True})
 driver.get("https://www.wikipedia.org/")
 
 # result only returned with mv2 extension enabled
-results = driver.injector.scripting.eval_str(
+results = driver.tabs.scripting.eval_str(
             '''
             console.log(window);
             navigator.userAgent
