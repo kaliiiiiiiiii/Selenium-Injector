@@ -140,7 +140,8 @@ class Injector(base_injector):
         try:
             result = self.tabs.eval_str("document.documentElement.outerHTML", self.tabs.active_tab["id"])
         except JSEvalException as e:
-            if e.message == 'Cannot access contents of url "data:,". Extension manifest must request permission to access this host.':
+            if e.message == 'Cannot access contents of url "data:,". ' \
+                    'Extension manifest must request permission to access this host.':
                 return '<html><head></head><body></body></html>'
             else:
                 raise e
