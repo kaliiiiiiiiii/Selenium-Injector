@@ -74,4 +74,27 @@ contentsettings.set_location = function(setting = "ask",urls="<all_urls>"){
     contentsettings.set("location", setting, urls)
 }
 
+globalThis.scripting = {}
+
+scripting.mv3_eval_str = function(code, target){
+    chrome.scripting.executeScript({
+    target: target,
+    func: code => {
+      const el = document.createElement('script');
+      el.textContent = code;
+      document.documentElement.appendChild(el);
+      el.remove();
+    },
+    args: [code],
+    world: 'MAIN',
+    //injectImmediately: true, // Chrome 102+
+  });
+}
+
+scripting.mv2_eval_str = function(code, tab_id){
+    chrome.tabs.executeScript(tab_id, {
+    code: code
+}, console.log);
+}
+
 
