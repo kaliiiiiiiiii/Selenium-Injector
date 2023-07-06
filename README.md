@@ -250,3 +250,4 @@ Inspiration, code snippets, etc.
 * [PEG-parser](https://github.com/pegjs/pegjs)
 * [make-SV-stayalive](https://stackoverflow.com/a/75082732/20443541)
 * [stringify-obj](https://stackoverflow.com/a/58416333/20443541)
+* [inject code from mv3](https://stackoverflow.com/a/70949953/20443541)
