@@ -162,26 +162,17 @@ note: this is only experimental yet (not included in pypi package)
 
 ```python
 from selenium_injector.webdriver import Chrome
-driver = Chrome()
+driver = Chrome(injector_options={"mv2":True, "mv3":True})
 
 driver.get("https://www.wikipedia.org/")
 
-s = driver.injector.socket
-t = s.js.types
-
-# using mv2 extension, no result available
-s.exec_command("scripting.mv3_eval_str", [
-    "console.log(window)",
-    {"tabId": driver.injector.tabs.active_tab["id"]}
-], user=driver.injector.mv3_user)
-
-# using mv2 extension, returns result
-result = s.exec_async(t.exec(t.path("chrome.tabs.executeScript"), args=[
-    t.value(driver.injector.tabs.active_tab["id"]),
-    t.value({"code": "console.log(window); navigator.userAgent"}),
-    t.send_back()
-]), user=driver.injector.mv2_user)
-print(result["result"][0])
+# result only returned with mv2 extension enabled
+results = driver.injector.scripting.eval_str(
+            '''
+            console.log(window);
+            navigator.userAgent
+            ''', tab_id=driver.injector.tabs.active_tab["id"])
+print(results[0])
 
 driver.quit()
 ```

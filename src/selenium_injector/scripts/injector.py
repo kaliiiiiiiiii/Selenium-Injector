@@ -119,6 +119,7 @@ class Injector(base_injector):
         self.declarativeNetRequest = self.declarativeNetRequest(**kwargs)
         self.cookies = self.cookies(**kwargs)
         self.debugger = self.debugger(**kwargs)
+        self.scripting = self.scripting(**kwargs)
 
     @property
     def connection_js(self):
@@ -465,7 +466,7 @@ class Injector(base_injector):
                     self.attach(active_tab_id)
             raise LookupError("No attached Target found")
 
-        def attach(self, tab_id: str = None, target_id: str = None, target:dict=None):
+        def attach(self, tab_id: str = None, target_id: str = None, target: dict = None):
             if not target:
                 target = self._target(tab_id, target_id, attached=False)
             if not self.debug_user:
@@ -520,3 +521,21 @@ class Injector(base_injector):
                 self.debug_user = self.any_user
             script = self.t.exec(self.t.path("chrome.debugger.getTargets"), args=[self.t.send_back()])
             return self.socket.exec_async(script, user=self.debug_user)["result"][0]
+
+    class scripting(base_injector):
+        def eval_str(self, code, tab_id):
+            users = self.injector.users
+            if "mv2" in users:
+                result = self.socket.exec_async(self.t.exec(self.t.path("chrome.tabs.executeScript"), args=[
+                    self.t.value(tab_id),
+                    self.t.value({"code": code}),
+                    self.t.send_back()
+                ]), user=users["mv2"])
+                return result["result"][0]
+            elif "mv3" in users:
+                self.socket.exec_command("scripting.mv3_eval_str", [
+                    code,
+                    {"tabId": tab_id}
+                ], user=users["mv3"])
+            else:
+                raise ModuleNotFoundError("chrome not initialized with extensions")
