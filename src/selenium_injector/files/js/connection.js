@@ -57,7 +57,11 @@ class handler {
 parse(results, status){
     var date = new Date()
     date = date.toLocaleString()
-
+    if(chrome.runtime && chrome.runtime.lastError){
+            // handle async errors in extension
+            var results=[{"message":chrome.runtime.lastError.message,"stack":chrome.runtime.lastError.message}];
+            status="error"
+        }
     try{var parsed = '{"result":'+this.stringify(results,0, this.max_depth)+', "status":'+JSON.stringify(status)+',"t":"'+date+'"}'}
     catch(e){var parsed = this.parse([{"message":e.message,"stack":e.stack}], "error")}
     return  parsed

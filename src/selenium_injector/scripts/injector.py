@@ -495,14 +495,7 @@ class Injector(base_injector):
             script = self.t.exec(self.t.path("chrome.debugger.sendCommand"), args=[
                 self.t.value(target), self.t.value(method), self.t.value(params),
                 self.t.send_back()])
-            try:
-                return self.socket.exec_async(script, user=self.debug_user)["result"][0]
-            except IndexError:
-                self.attach(target=target)
-                try:
-                    return self.socket.exec_async(script, user=self.debug_user)["result"][0]
-                except IndexError:
-                    raise RuntimeError("Couldn't get result, you might check the extension-console")
+            return self.socket.exec_async(script, user=self.debug_user)["result"][0]
 
         def on_event(self):
             if not self.debug_user:

@@ -17,6 +17,7 @@
 
             alivePort.onDisconnect.addListener( (p) => {
                 alivePort = null;
+                if(chrome.runtime.lastError){}
             });
         }
 
