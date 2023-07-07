@@ -40,7 +40,7 @@ class handler {
             }
         catch(e){
             // handle sync errors
-            this.result = result={"message":e.message,"stack":e.stack};
+            var result = result={"message":e.message,"stack":e.stack};
             this.status="error"
             };
         if(!(this.not_return)){
