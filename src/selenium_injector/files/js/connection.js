@@ -36,30 +36,38 @@ class handler {
             if (request.hasOwnProperty("max_depth")){this.max_depth = request["max_depth"]}
 
             var result = this.eval(request)
-
-            if(this.not_return && result && result.catch && this.isFunction(result.catch)){
-                    // handle async errors
-                    result.catch((e) => {
-                        result={"message":e.message,"stack":e.stack};
-                        this.status="error"
-                    })
-                }
+            this.catch_async(result)
             }
         catch(e){
             // handle sync errors
-            var result={"message":e.message,"stack":e.stack};
+            this.result = result={"message":e.message,"stack":e.stack};
             this.status="error"
             };
-        if(!(this.not_return) || this.status === "error"){
+        if(!(this.not_return)){
             this.send_back(result)
         }
     }
+catch_async(result){
+    if(result && result.catch && this.isFunction(result.catch)){
+                    // handle async errors
+
+                    result.catch(function(e){
+                        // we dont want multiple responses
+                        if(!(this.status == "error")){
+                            result = result={"message":e.message,"stack":e.stack};
+                            this.status="error"
+                            this.send_back(result)
+                            this.not_return = true
+                        }
+                    }.bind(this))
+                }
+}
 parse(results, status){
     var date = new Date()
     date = date.toLocaleString()
     if(chrome.runtime && chrome.runtime.lastError){
             // handle async errors in extension
-            var results=[{"message":chrome.runtime.lastError.message,"stack":chrome.runtime.lastError.message}];
+            results=[{"message":chrome.runtime.lastError.message,"stack":chrome.runtime.lastError.message}];
             status="error"
         }
     try{var parsed = '{"result":'+this.stringify(results,0, this.max_depth)+', "status":'+JSON.stringify(status)+',"t":"'+date+'"}'}
@@ -160,7 +168,9 @@ exec(func, args=[]){
     });
     var res_func = this.eval(func)
     if (this.isFunction(res_func)){
-        return res_func(...res_args)
+        var result = res_func(...res_args)
+        this.catch_async(result)
+        return result
     }
     else{
         throw new TypeError("Expected a function, got "+this.stringify(res_func))

@@ -59,7 +59,7 @@ class SynchronousWebsocketServer:
                     self.users[user]["events"][resp_id].queue.put(response)
                 else:  # is response
                     if resp_id in self.users[user]["rx"]:
-                        raise ConnectionError(f'already got ["{user}"]["rx"]["{resp_id}"], dublicate response-id')
+                        raise ConnectionError(f'already got ["{user}"]["rx"]["{resp_id}"], dublicate response-id. \n this might be due to an async error')
                     self.users[user]["rx"].update({resp_id: response})
         except websockets.exceptions.ConnectionClosedError:
             pass
