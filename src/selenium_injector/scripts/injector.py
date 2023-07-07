@@ -1,3 +1,6 @@
+import os.path
+
+
 class UserNotFound(Exception):
     def __init__(self, message, user: str = None):
         super().__init__(message)
@@ -53,6 +56,9 @@ def make_config(host: str, port: int, user: str, debug: bool or None = None):
 
 def make_extension(path: str, user: str, host: str, port: int, debug: bool, mv: int):
     from selenium_injector.utils.utils import read, write
+    import uuid
+    import os
+
     if mv not in [2, 3]:
         raise ValueError(f"mv needs to be 2 or 3, but got {mv}")
 
@@ -64,7 +70,8 @@ def make_extension(path: str, user: str, host: str, port: int, debug: bool, mv: 
     background_js = background_js + connection_js + config
     if mv == 3:
         background_js = read("files/extension/stay_alive.js", sel_root=True) + background_js
-    path = path + f"mv{mv}_extension"
+    path = path + "extensions/" + uuid.uuid4().hex + f"/mv{mv}_extension"
+    os.makedirs(path, exist_ok=True)
     write(path + "/background.js", background_js, sel_root=False)
     write(path + "/manifest.json", manifest_json, sel_root=False)
     return path
@@ -76,6 +83,8 @@ class Injector(base_injector):
                  debug: bool or None = None, mv2: bool = True, mv3: bool = True):
         from selenium_injector.scripts.socket import socket
         from selenium_injector.utils.utils import sel_injector_path, random_port
+        import atexit
+        atexit.register(self.stop)
 
         if not host:
             host = "localhost"
@@ -113,7 +122,6 @@ class Injector(base_injector):
 
         self.socket = socket()
         self.socket.start(port=port, host=host)
-        self.stop = self.socket.stop
         self.exec = self.socket.exec
         self.exec_command = self.socket.exec_command
 
@@ -160,6 +168,16 @@ class Injector(base_injector):
             return self.tabs.active_tab['title']
         except TimeoutError:
             return None
+
+    def stop(self):
+        import shutil
+        for path in self.paths:
+            directory = os.path.dirname(path)
+            if os.path.basename(os.path.dirname(directory)) == "extensions":
+                shutil.rmtree(path=directory)
+            else:
+                raise FileNotFoundError("couldn't remove files of extensions")
+        self.socket.stop()
 
     class proxy(base_injector):
         def __init__(self, *args, **kwargs):

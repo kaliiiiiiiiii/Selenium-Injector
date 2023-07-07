@@ -182,9 +182,6 @@ driver.quit()
 Please feel free to open an issue or fork!
 
 ## Todo
-
-- [ ] support multithreading
-  - [ ] use unique tmp-paths every time
 - [x] eval within tab scope from extension
   - [x] mv2
     - [x] return 

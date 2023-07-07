@@ -32,13 +32,11 @@ class SynchronousWebsocketServer:
     """
 
     def __init__(self):
-        import atexit
         self.loop = asyncio.new_event_loop()
         self.ws_server = None
         self.users = {}
         self.host = None
         self.port = None
-        atexit.register(self.stop)
 
     # Executed for each websocket
     async def server_routine(self, websocket):
