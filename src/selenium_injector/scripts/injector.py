@@ -171,6 +171,8 @@ class Injector(base_injector):
 
     def stop(self):
         import shutil
+        import atexit
+        atexit.unregister(self.stop)
         for path in self.paths:
             directory = os.path.dirname(path)
             if os.path.basename(os.path.dirname(directory)) == "extensions":
