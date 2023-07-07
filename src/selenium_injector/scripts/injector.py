@@ -1,4 +1,6 @@
-import os.path
+import shutil
+import atexit
+import os
 
 
 class UserNotFound(Exception):
@@ -170,13 +172,11 @@ class Injector(base_injector):
             return None
 
     def stop(self):
-        import shutil
-        import atexit
         atexit.unregister(self.stop)
         for path in self.paths:
             directory = os.path.dirname(path)
             if os.path.basename(os.path.dirname(directory)) == "extensions":
-                shutil.rmtree(path=directory)
+                shutil.rmtree(path=directory, ignore_errors=True)
             else:
                 raise FileNotFoundError("couldn't remove files of extensions")
         self.socket.stop()
