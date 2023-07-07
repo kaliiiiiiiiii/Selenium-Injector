@@ -50,7 +50,8 @@ except TimeoutError as e:
 except JSEvalException as e:
     if e.message == 'Element by XPATH://*[@id="js-link-box-en"]/strong not found!':
         pass # do some handling
-    raise e
+    else:
+        raise e
 
 driver.quit()
 ```
