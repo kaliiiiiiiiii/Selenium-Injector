@@ -183,21 +183,25 @@ Please feel free to open an issue or fork!
 
 ## Todo
 
-- [ ] eval within tab scope from extension
-- [x] Add MV2 extension
-  - [ ] change headers
+- [ ] support multithreading
+  - [ ] use unique tmp-paths every time
+- [x] eval within tab scope from extension
+  - [x] mv2
+    - [x] return 
+    - [ ] stringify obj
+  - [x] mv3
+    - [ ] return
+    - [ ] stringify obj
 - [x] add events
   - [x] make protocoll use `UUIDS`'s
   - [ ] allow response to event within scope
     - using `(...args) => {new event_handler(...args)}`
 - [x] types.eval
   - [ ] for-loops
-  - [x] async execution
 - [x] authentificaten proxies
   - [x] manage webrtc-leak
   - [x] manage location api leak
   - [ ] proxy per request
-- [ ] add `chrome.scripting` support
 - [ ] add automation tools
   - [x] click
   - [ ] send_keys
