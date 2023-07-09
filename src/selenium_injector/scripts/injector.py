@@ -68,8 +68,9 @@ def make_extension(path: str, user: str, host: str, port: int, debug: bool, mv: 
     background_js = read("files/extension/background.js", sel_root=True)
     manifest_json = read(f"files/extension/manifest_{mv}.json", sel_root=True)
     connection_js = read("files/js/connection.js", sel_root=True)
+    function_js = read("files/js/returner.js", sel_root=True)
 
-    background_js = background_js + connection_js + config
+    background_js = background_js + function_js + connection_js + config
     if mv == 3:
         background_js = read("files/extension/stay_alive.js", sel_root=True) + background_js
     path = path + "extensions/" + uuid.uuid4().hex + f"/mv{mv}_extension"
@@ -151,7 +152,7 @@ class Injector(base_injector):
             result = self.tabs.eval_str("document.documentElement.outerHTML", self.tabs.active_tab["id"])
         except JSEvalException as e:
             if e.message == 'Cannot access contents of url "data:,". ' \
-                    'Extension manifest must request permission to access this host.':
+                            'Extension manifest must request permission to access this host.':
                 return '<html><head></head><body></body></html>'
             else:
                 raise e
@@ -299,14 +300,16 @@ class Injector(base_injector):
                                                   "args": [{"type": "val", 'val': query}, self.socket.send_back]
                                                   }, user=self.any_user, timeout=timeout)
 
-        def eval_str(self, code, tab_id):
+        def eval_str(self, code, tab_id:int=None, timeout=10):
+            if not tab_id:
+                tab_id = self.active_tab["id"]
             users = self.injector.users
             if "mv2" in users:
                 result = self.socket.exec_async(self.t.exec(self.t.path("chrome.tabs.executeScript"), args=[
                     self.t.value(tab_id),
                     self.t.value({"code": code}),
                     self.t.send_back()
-                ]), user=users["mv2"])
+                ]), user=users["mv2"], timeout=timeout)
                 return result["result"][0]
             elif "mv3" in users:
                 self.socket.exec_command("scripting.mv3_eval_str", [
@@ -315,6 +318,25 @@ class Injector(base_injector):
                 ], user=users["mv3"])
             else:
                 raise UserNotFound("chrome not initialized with extensions")
+
+        def exec(self, type_dict: dict, tab_id:int=None, max_depth: int = 2, debug: bool = True, timeout=10):
+            if not tab_id:
+                tab_id = self.active_tab["id"]
+            script = self.t.exec(
+                self.t.path("scripting.tab_exec"),
+                args=[self.t.send_back(), self.t.value(type_dict), self.t.value(tab_id), self.t.value(max_depth),
+                      self.t.value(debug)]
+            )
+            script.update(self.t.not_return)
+            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4+max_depth)["result"][0][0]["result"]
+            result = response["result"]
+            status = response["status"]
+            if status == "error":
+                from selenium_injector.scripts.socket import JSEvalException
+                stack = result["stack"]
+                message = result["message"]
+                raise JSEvalException(message, stack)
+            return result
 
         @property
         def all_tabs(self):

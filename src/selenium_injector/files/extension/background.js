@@ -97,4 +97,12 @@ scripting.mv2_eval_str = function(code, tab_id){
 }, console.log);
 }
 
+scripting.tab_exec = function(callback, type_dict, tab_id, max_depth, debug){
+        chrome.scripting.executeScript({
+        target:{"tabId":tab_id},
+        func:globalThis.returner,
+        args:[type_dict, debug, max_depth]
+    }).then(callback)
+}
+
 
