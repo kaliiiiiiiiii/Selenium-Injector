@@ -17,7 +17,7 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
                 var result = result={"message":e.message,"stack":e.stack};
                 return this.parse(result, "error")
                 };
-            result = this.parse(result)
+            result = this.parse([result])
             if(this.debug){
                     console.log("response",result)
                 };

@@ -92,10 +92,18 @@ scripting.mv3_eval_str = function(code, target){
 }
 
 scripting.tab_exec = function(callback, type_dict, tab_id, max_depth, debug){
-    chrome.scripting.executeScript({
-        target:{"tabId":tab_id},
-        func:globalThis.returner,
-        args:[type_dict, debug, max_depth]}).then(callback)
+        if(chrome.scripting){ //mv3
+            chrome.scripting.executeScript({
+                target:{"tabId":tab_id},
+                func:globalThis.returner,
+                args:[type_dict, debug, max_depth]}).then(callback)
+        }
+        else{ // mv2, uses Function.prototype.toString()
+            chrome.tabs.executeScript(tab_id,
+                {"code":`(${globalThis.returner.toString()})(${JSON.stringify(type_dict)},${JSON.stringify(debug)},${JSON.stringify(max_depth)})`},
+                callback)
+        }
+
     }
 
 

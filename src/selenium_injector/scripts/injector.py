@@ -327,7 +327,7 @@ class Injector(base_injector):
                       self.t.value(debug)]
             )
             script.update(self.t.not_return)
-            response = self.socket.exec(script, user=self.mv3_user, timeout=timeout, max_depth=4+max_depth)["result"][0][0]["result"]
+            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4+max_depth)["result"][0][0]["result"]
             result = response["result"]
             status = response["status"]
             if status == "error":

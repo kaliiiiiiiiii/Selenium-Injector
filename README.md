@@ -161,6 +161,7 @@ driver.quit()
 #### execute script within tab
 note: this is only experimental yet (not included in pypi package)
 
+from string
 ```python
 from selenium_injector.webdriver import Chrome
 driver = Chrome(injector_options={"mv2":True, "mv3":True})
@@ -173,6 +174,20 @@ results = driver.tabs.scripting.eval_str(
             console.log(window);
             navigator.userAgent
             ''', tab_id=driver.injector.tabs.active_tab["id"])
+print(results[0])
+
+driver.quit()
+```
+
+with types, always returns
+```python
+from selenium_injector.webdriver import Chrome
+driver = Chrome()
+
+driver.get("https://www.wikipedia.org/")
+
+t = driver.injector.socket.js.types
+results = driver.injector.tabs.exec(t.exec(t.path("prompt"), args=[t.value("test")]), timeout=40)
 print(results[0])
 
 driver.quit()
