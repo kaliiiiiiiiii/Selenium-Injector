@@ -68,11 +68,10 @@ def make_extension(path: str, user: str, host: str, port: int, debug: bool, mv: 
     background_js = read("files/extension/background.js", sel_root=True)
     manifest_json = read(f"files/extension/manifest_{mv}.json", sel_root=True)
     connection_js = read("files/js/connection.js", sel_root=True)
-    function_js = read("files/js/returner.js", sel_root=True)
 
-    background_js = background_js + function_js + connection_js + config
+    background_js = background_js + connection_js + config
     if mv == 3:
-        background_js = read("files/extension/stay_alive.js", sel_root=True) + background_js
+        background_js = read("files/extension/stay_alive.js", sel_root=True) + read("files/js/returner.js", sel_root=True) + background_js
     path = path + "extensions/" + uuid.uuid4().hex + f"/mv{mv}_extension"
     os.makedirs(path, exist_ok=True)
     write(path + "/background.js", background_js, sel_root=False)
@@ -328,7 +327,7 @@ class Injector(base_injector):
                       self.t.value(debug)]
             )
             script.update(self.t.not_return)
-            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4+max_depth)["result"][0][0]["result"]
+            response = self.socket.exec(script, user=self.mv3_user, timeout=timeout, max_depth=4+max_depth)["result"][0][0]["result"]
             result = response["result"]
             status = response["status"]
             if status == "error":
