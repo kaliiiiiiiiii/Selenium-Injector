@@ -19,7 +19,7 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
                 };
             if(result.constructor == Promise){
                 var parse = function(results, status=200){
-                    var res = result.then(function(result){return this.parse(result)}.bind(this))
+                    var res = results[0].then(function(result){return this.parse([result])}.bind(this))
                     return res}.bind(this)
                 }
             else{var parse = this.parse}
