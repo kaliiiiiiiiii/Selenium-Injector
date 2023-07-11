@@ -180,6 +180,7 @@ driver.quit()
 ```
 
 with types, always returns
+resolves promises with MV3 automatically
 ```python
 from selenium_injector.webdriver import Chrome
 driver = Chrome(injector_options={"mv3":True})
