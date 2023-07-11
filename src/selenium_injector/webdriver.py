@@ -34,15 +34,6 @@ class Chrome(BaseDriver):
 
         super().__init__(**kwargs)
 
-        # connection to tab-0
-        tab_index = self.window_handles.index(self.current_window_handle).__str__()
-        self.injector.tab_user = "tab-" + tab_index
-        config = make_config(self.injector.socket.host, self.injector.socket.port, self.injector.tab_user, debug=True)
-        from selenium_injector.utils.utils import read
-        utils_js = read("files/js/utils.js", sel_root=True)
-        self.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
-                             {"source": "(function(){%s})()" % (utils_js + self.injector.connection_js + config)})
-
     def quit(self) -> None:
         self.injector.stop()
         super().quit()
