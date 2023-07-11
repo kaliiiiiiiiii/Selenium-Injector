@@ -15,15 +15,15 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
             catch(e){
                 // handle sync errors
                 var result = result={"message":e.message,"stack":e.stack};
-                return this.parse(result, "error")
+                return this.parse([result], "error")
                 };
             if(result.constructor == Promise){
                 var parse = function(results, status=200){
-                    var res = result.then(function(result){return this.parse([result])}.bind(this))
+                    var res = result.then(function(result){return this.parse(result)}.bind(this))
                     return res}.bind(this)
                 }
-            else{var parse = this.parse, result = [result]}
-            result = parse([result])
+            else{var parse = this.parse}
+            result = parse.bind(this)([result])
             if(this.debug){
                     console.log("response",result)
                 };
@@ -32,11 +32,6 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
     parse(results, status=200){
         var date = new Date()
         date = date.toLocaleString()
-        if(chrome.runtime && chrome.runtime.lastError){
-                // handle async errors in extension
-                results=[{"message":chrome.runtime.lastError.message,"stack":chrome.runtime.lastError.message}];
-                status="error"
-            }
         try{var parsed = {"result":this.stringify(results,0, this.max_depth), "status":status,"t":date}}
         catch(e){var parsed = this.parse([{"message":e.message,"stack":e.stack}], "error")}
         return  parsed
