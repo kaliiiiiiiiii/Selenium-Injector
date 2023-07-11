@@ -68,10 +68,11 @@ def make_extension(path: str, user: str, host: str, port: int, debug: bool, mv: 
     background_js = read("files/extension/background.js", sel_root=True)
     manifest_json = read(f"files/extension/manifest_{mv}.json", sel_root=True)
     connection_js = read("files/js/connection.js", sel_root=True)
+    returner_js = read("files/js/returner.js", sel_root=True)
 
-    background_js = background_js + connection_js + config
+    background_js = background_js + returner_js + connection_js + config
     if mv == 3:
-        background_js = read("files/extension/stay_alive.js", sel_root=True) + read("files/js/returner.js", sel_root=True) + background_js
+        background_js = read("files/extension/stay_alive.js", sel_root=True) + background_js
     path = path + "extensions/" + uuid.uuid4().hex + f"/mv{mv}_extension"
     os.makedirs(path, exist_ok=True)
     write(path + "/background.js", background_js, sel_root=False)
@@ -299,7 +300,7 @@ class Injector(base_injector):
                                                   "args": [{"type": "val", 'val': query}, self.socket.send_back]
                                                   }, user=self.any_user, timeout=timeout)
 
-        def eval_str(self, code, tab_id:int=None, timeout=10):
+        def eval_str(self, code, tab_id: int = None, timeout=10):
             if not tab_id:
                 tab_id = self.active_tab["id"]
             users = self.injector.users
@@ -318,7 +319,7 @@ class Injector(base_injector):
             else:
                 raise UserNotFound("chrome not initialized with extensions")
 
-        def exec(self, type_dict: dict, tab_id:int=None, max_depth: int = 2, debug: bool = True, timeout=10):
+        def exec(self, type_dict: dict, tab_id: int = None, max_depth: int = 2, debug: bool = True, timeout=10):
             if not tab_id:
                 tab_id = self.active_tab["id"]
             script = self.t.exec(
@@ -327,15 +328,15 @@ class Injector(base_injector):
                       self.t.value(debug)]
             )
             script.update(self.t.not_return)
-            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4+max_depth)["result"][0][0]["result"]
-            result = response["result"]
+            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4 + max_depth)["result"][
+                0]
             status = response["status"]
             if status == "error":
                 from selenium_injector.scripts.socket import JSEvalException
-                stack = result["stack"]
-                message = result["message"]
+                stack = response["result"][0]["stack"]
+                message = response["result"][0]["message"]
                 raise JSEvalException(message, stack)
-            return result
+            return response
 
         @property
         def all_tabs(self):
