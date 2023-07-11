@@ -17,7 +17,13 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
                 var result = result={"message":e.message,"stack":e.stack};
                 return this.parse(result, "error")
                 };
-            result = this.parse([result])
+            if(result.constructor == Promise){
+                var parse = function(results, status=200){
+                    var res = result.then(function(result){return this.parse([result])}.bind(this))
+                    return res}.bind(this)
+                }
+            else{var parse = this.parse, result = [result]}
+            result = parse([result])
             if(this.debug){
                     console.log("response",result)
                 };
