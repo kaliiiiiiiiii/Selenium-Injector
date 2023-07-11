@@ -21,44 +21,6 @@
 
 ### Example scripts
 
-
-#### click on element
-```python
-from selenium_injector.webdriver import Chrome
-from selenium_injector.scripts.socket import JSEvalException
-
-from undetected_chromedriver import Chrome as base_driver
-
-
-driver = Chrome(base_drivers=(base_driver,))
-
-driver.get("https://www.wikipedia.org/")
-driver.injector.socket.exec_command("utils.find_element.ByXpath", '//*[@id="js-link-box-en"]/strong', user=driver.injector.tab_user)
-
-js = driver.injector.socket.js
-t = js.types
-u = js.utils
-
-prev_url = driver.current_url[:]
-try:
-    driver.injector.socket.exec(u.click_element(u.find_element_by_xpath('//*[@id="js-link-box-en"]/strong')), user=driver.injector.tab_user, timeout=2)
-except TimeoutError as e:
-    if driver.current_url != prev_url:
-        pass  # new page loaded before send_response
-    else:
-        raise e
-except JSEvalException as e:
-    if e.message == 'Element by XPATH://*[@id="js-link-box-en"]/strong not found!':
-        pass # do some handling
-    else:
-        raise e
-
-driver.quit()
-```
-Don't forget to execute
-`driver.quit()`
-in the End. Else-wise your temporary folder will get flooded! and it keeps running
-
 #### set proxy dynamically
 ```python
 from selenium_injector.webdriver import Chrome
@@ -71,6 +33,10 @@ driver.get("https://whatismyipaddress.com/")
 driver.injector.proxy.clear()
 driver.quit()
 ```
+Don't forget to execute
+`driver.quit()`
+in the End. Else-wise your temporary folder will get flooded! and it keeps running
+
 #### use events
 ```python
 from selenium_injector.webdriver import Chrome
