@@ -182,13 +182,13 @@ driver.quit()
 with types, always returns
 ```python
 from selenium_injector.webdriver import Chrome
-driver = Chrome()
+driver = Chrome(injector_options={"mv3":True})
 
 driver.get("https://www.wikipedia.org/")
 
 t = driver.injector.socket.js.types
-results = driver.injector.tabs.exec(t.exec(t.path("prompt"), args=[t.value("test")]), timeout=40)
-print(results[0])
+results = driver.injector.tabs.exec(t.exec(t.path("fetch"), args=[t.value("https://www.wikipedia.org/")]), timeout=40)
+print(results["result"][0])
 
 driver.quit()
 ```
