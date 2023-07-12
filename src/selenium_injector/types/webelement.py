@@ -116,7 +116,10 @@ class WebElement(BaseElement):
     @property
     def text(self) -> str:
         """The text of the element."""
-        return self.get_property("textContent")
+        try:
+            return self.get_property("textContent")
+        except IndexError:
+            return ''
 
     def click(self) -> None:
         """Clicks the element."""
@@ -408,7 +411,7 @@ class WebElement(BaseElement):
 
         :rtype: WebElement
         """
-        return self._exec(self._find_element(by=by, value=None))
+        return self._exec(self._find_element(by=by, value=None))["result"][0]
 
     def find_elements(self, by=By.ID, value=None):
         """Find elements given a By strategy and locator.
