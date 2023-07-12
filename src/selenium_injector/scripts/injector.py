@@ -145,7 +145,7 @@ class Injector(base_injector):
         if "mv2" not in self.users:
             raise NotImplementedError("getting the page source only with mv2 implemented yet")
         try:
-            result = self.tabs.eval_str("document.documentElement.outerHTML", self.tabs.active_tab["id"])
+            result = self.tabs.exec(self.tabs.t.path("document.documentElement.outerHTML"))["result"]
         except JSEvalException as e:
             if e.message == 'Cannot access contents of url "data:,". ' \
                             'Extension manifest must request permission to access this host.':
