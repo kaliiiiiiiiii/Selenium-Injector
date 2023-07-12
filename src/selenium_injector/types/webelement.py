@@ -57,8 +57,6 @@ class BaseElement:
         result = self._exec(self._raw, timeout=4, max_depth=2)['result']
         if not result:
             raise NoSuchElementException()
-        else:
-            raise result[0]
 
     def get_property(self, name):
         """Gets the given property of the element.
