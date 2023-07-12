@@ -17,7 +17,7 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
                 var result = result={"message":e.message,"stack":e.stack};
                 return this.parse([result], "error")
                 };
-            if(result.constructor == Promise){
+            if(result && result.constructor && result.constructor == Promise){
                 var parse = function(results, status=200){
                     var res = results[0].then(function(result){return this.parse([result])}.bind(this))
                     return res}.bind(this)

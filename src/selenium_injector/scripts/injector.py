@@ -138,10 +138,6 @@ class Injector(base_injector):
         self.cookies = self.cookies(**kwargs)
         self.debugger = self.debugger(**kwargs)
 
-    @property
-    def connection_js(self):
-        from selenium_injector.utils.utils import read
-        return read("files/js/connection.js", sel_root=True)
 
     @property
     def page_source(self):
@@ -171,6 +167,12 @@ class Injector(base_injector):
             return self.tabs.active_tab['title']
         except TimeoutError:
             return None
+
+    def find_element(self, by: str, value: str, tab_id: int=None, parent=None):
+        from selenium_injector.types.webelement import WebElement
+        if not tab_id:
+            tab_id = self.tabs.active_tab["id"]
+        return WebElement(by=by,value=value, tab_id=tab_id, injector=self, parent=parent)
 
     def stop(self):
         atexit.unregister(self.stop)
@@ -328,8 +330,11 @@ class Injector(base_injector):
                       self.t.value(debug)]
             )
             script.update(self.t.not_return)
-            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4 + max_depth)["result"][
-                0]
+            response = self.socket.exec(script, user=self.any_user, timeout=timeout, max_depth=4 + max_depth)["result"]
+            if response:
+                response = response[0]
+            else:
+                return {"status":"None", "result": [None]}
             status = response["status"]
             if status == "error":
                 from selenium_injector.scripts.socket import JSEvalException

@@ -160,6 +160,23 @@ print(results["result"][0])
 driver.quit()
 ```
 
+#### find element
+note: this is only experimental yet (not included in pypi package)
+```python
+from selenium_injector.webdriver import Chrome
+from selenium_injector.types.by import By
+
+driver = Chrome(injector_options={"mv2":True, "mv3":True})
+driver.get("https://www.wikipedia.org/")
+
+
+elem = driver.injector.find_element(By.XPATH, '//*[@id="js-link-box-en"]/strong')
+elem.click()
+
+driver.quit()
+
+```
+
 ## Help
 
 Please feel free to open an issue or fork!
