@@ -28,7 +28,11 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
             catch(e){
                 // handle sync errors
                 var result = result={"message":e.message,"stack":e.stack};
-                return this.parse([result], "error")
+                result = this.parse([result], "error")
+                if(this.debug){
+                    console.log("response",result)
+                };
+                return result
                 };
             if(result && result.constructor && result.constructor == Promise){
                 var parse = function(results, status=200){

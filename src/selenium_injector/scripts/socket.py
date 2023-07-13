@@ -3,7 +3,7 @@ from selenium_injector.types.js import JS
 
 
 class JSEvalException(Exception):
-    def __init__(self, message, stack):
+    def __init__(self, message: str, stack: str = None):
         super().__init__(stack)
         self.message = message
         self.stack = stack
