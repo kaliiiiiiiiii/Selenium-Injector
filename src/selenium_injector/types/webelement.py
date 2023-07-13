@@ -123,7 +123,14 @@ class WebElement():
         if by == By.CSS_SELECTOR:  # CSS only returns one element
             return [self.find_element(by=by, value=value, base_element=base_element)]
         elif by == By.TAG_NAME:
-            raise NotImplementedError()
+            elems = []
+            script = self._find_elems.by_tag_name(value, base_element._raw)
+            length = self._exec(self.t.path(self.t.value("length"), obj=script))["result"][0]
+            for idx in range(length):
+                _raw = self.t.path(self.t.value(0), obj=script)
+                self._exec(_raw)  # test
+                elem = WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector)
+                elems.append(elem)
         elif by == By.XPATH:
             elems = []
             length = self._exec(self._find_elems._by_xpath_result_length(value, base_element._raw))["result"][0]
