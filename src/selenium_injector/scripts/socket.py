@@ -1,5 +1,5 @@
 from selenium_injector.scripts.sync_websocket import SynchronousWebsocketServer
-from selenium_injector.scripts.js import JS
+from selenium_injector.types.js import JS
 
 
 class JSEvalException(Exception):

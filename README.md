@@ -170,11 +170,10 @@ driver = Chrome(injector_options={"mv2":True, "mv3":True})
 driver.get("https://www.wikipedia.org/")
 
 
-elem = driver.injector.find_element(By.XPATH, '//*[@id="js-link-box-en"]/strong')
-elem.click()
+elem = driver.injector.find_elements(By.XPATH, '//*[@id="js-link-box-en"]')
+elem[0].click()
 
 driver.quit()
-
 ```
 
 ## Help

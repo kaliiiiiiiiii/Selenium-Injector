@@ -1,7 +1,7 @@
 class JS:
     def __init__(self):
         self.types = self.types()
-        self.utils = self.utils(self.types)
+        self.find_elements = self.find_elements(self.types)
 
     class types:
         def __init__(self):
@@ -48,13 +48,34 @@ class JS:
                              args=[self.value(event_id)]
                              )
 
-    class utils:
+    class find_elements:
         def __init__(self, types):
-            self.types = types
+            self.t = types
 
-        def find_element_by_xpath(self, xpath: str):
-            return self.types.exec(self.types.path("utils.find_element.ByXpath"),
-                                   args=[self.types.value(xpath)])
+        def _by_xpath_result_length(self, value, base_element):
+            script = self._by_xpath(value, base_element)
+            return self.t.path("snapshotLength", obj=script)
 
-        def click_element(self, element: dict):
-            return self.types.exec(self.types.path("click", element))
+        def _by_xpath(self, value, base_element):
+            script = self.t.exec(self.t.path("document.evaluate"), args=[
+                                     self.t.value(value),
+                                     base_element, self.t.value(None),
+                                     self.t.value(7),  # "XPathResult.ORDERED_NODE_SNAPSHOT_TYPE"
+                                     self.t.value(None)
+                                 ])
+            return script
+
+        def by_xpath(self, value: str, base_element, idx: int):
+            script = self._by_xpath(value, base_element)
+            return self.t.exec(self.t.path("snapshotItem", obj=script), args=[self.t.value(idx)])
+
+        def by_tag_name(self, value, base_element):
+            return self.t.exec(self.t.path("getElementsByTagName", obj=base_element), args=[
+                self.t.value(value)
+            ])
+
+        def by_css_selector(self, value, base_element):
+            script = self.t.exec(self.t.path("querySelector", obj=base_element), args=[
+                self.t.value(value)
+            ])
+            return self.t.list([script])

@@ -138,7 +138,6 @@ class Injector(base_injector):
         self.cookies = self.cookies(**kwargs)
         self.debugger = self.debugger(**kwargs)
 
-
     @property
     def page_source(self):
         from selenium_injector.scripts.socket import JSEvalException
@@ -168,11 +167,21 @@ class Injector(base_injector):
         except TimeoutError:
             return None
 
-    def find_element(self, by: str, value: str, tab_id: int=None, parent=None):
+    def find_element(self, by: str, value: str, tab_id: int = None, parent=None):
         from selenium_injector.types.webelement import WebElement
         if not tab_id:
             tab_id = self.tabs.active_tab["id"]
-        return WebElement(by=by,value=value, tab_id=tab_id, injector=self, parent=parent)
+        if not parent:
+            parent = WebElement(tab_id=tab_id, injector=self, _raw=self.socket.js.types.path("document"))
+        return parent.find_element(by=by, value=value)
+
+    def find_elements(self, by: str, value: str, tab_id: int = None, parent=None):
+        from selenium_injector.types.webelement import WebElement
+        if not tab_id:
+            tab_id = self.tabs.active_tab["id"]
+        if not parent:
+            parent = WebElement(tab_id=tab_id, injector=self, _raw=self.socket.js.types.path("document"))
+        return parent.find_elements(by=by, value=value)
 
     def stop(self):
         atexit.unregister(self.stop)
@@ -334,7 +343,7 @@ class Injector(base_injector):
             if response:
                 response = response[0]
             else:
-                return {"status":"None", "result": [None]}
+                return {"status": "None", "result": [None]}
             status = response["status"]
             if status == "error":
                 from selenium_injector.scripts.socket import JSEvalException

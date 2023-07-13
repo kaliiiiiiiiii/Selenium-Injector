@@ -93,6 +93,7 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
 
     path(path, obj = undefined){
         if (obj == undefined){obj = globalThis} else{obj = this.eval(obj)}
+        if(typeof path === "number"){return obj[path]}
         for (var i=0, path=path.split('.'), len=path.length; i<len; i++){
             if(this.isFunction(obj[path[i]])){obj = obj[path[i]].bind(obj)}
             else{obj = obj[path[i]]};

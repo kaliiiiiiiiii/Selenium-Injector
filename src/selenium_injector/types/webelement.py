@@ -20,22 +20,40 @@
 import warnings
 from base64 import b64decode
 
-from selenium.common.exceptions import JavascriptException
 from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.shadowroot import ShadowRoot
 
 from selenium_injector.scripts.socket import JSEvalException
 
 
-class BaseElement:
-    def __init__(self, injector, tab_id):
+# noinspection PyProtectedMember
+class WebElement():
+    """Represents a DOM element.
+
+    Generally, all interesting operations that interact with a document will be
+    performed through this interface.
+
+    All method calls will do a freshness check to ensure that the element
+    reference is still valid.  This essentially determines whether the
+    element is still attached to the DOM.  If this test fails, then an
+    ``StaleElementReferenceException`` is thrown, and all future calls to this
+    instance will fail.
+    """
+
+    def __init__(self, _raw: dict, tab_id: int, injector, parent=None) -> None:
         self._tab_id = tab_id
         self._injector = injector
         self.t = injector.socket.js.types
-        self._by = By.XPATH
-        self._value = "/"
+        self._find_elems = injector.socket.js.find_elements
+        self._raw = _raw
+        self._parent = parent
+
+        if not parent:
+            self._parent = WebElement(tab_id=tab_id, injector=injector, _raw=self.t.path("document"),
+                                      parent="undefined")
+        elif parent == "undefined":
+            self._parent = None
 
     def _exec(self, type_dict: dict, max_depth: int = 2, debug: bool = True, timeout=10):
         try:
@@ -46,17 +64,80 @@ class BaseElement:
 
     def _handle_js_exc(self, e):
         if e.message[:41] == "TypeError: Cannot read properties of null":
-            locator = {"method": self._by, "selector": self._value}
-            raise NoSuchElementException(f"Unable to locate element:{locator}")
+            raise NoSuchElementException(f"Unable to locate element: {self._raw}")
         else:
             raise e
 
+    def _find_element(self, by=By.ID, value=None, base_element=None):
+        from selenium_injector.types.by import By
+
+        if not base_element:
+            base_element = self
+        if by == By.ID:
+            by = By.XPATH
+            value = f'//*[@id="{value}"]'
+        elif by == By.CLASS_NAME:
+            by = By.XPATH
+            value = f'//*[@class="{value}"]'
+        elif by == By.NAME:
+            by = By.XPATH
+            value = f'//*[@name="{value}"]'
+
+        if by == By.XPATH:
+            return self._find_elems.by_xpath(value, base_element, 0)
+        elif by == By.TAG_NAME:
+            return self.t.path(self.t.value(0), obj=self._find_elems.by_tag_name(value, base_element))
+        elif by == By.CSS_SELECTOR:
+            return self.t.path(self.t.value(0), self._find_elems.by_css_selector(value, base_element))
+        else:
+            raise ValueError("by needs to be selenium.webdriver.common.by.by.py")
+
+    def find_element(self, by=By.ID, value=None, base_element=None):
+        """Find an element given a By strategy and locator.
+
+        :Usage:
+            ::
+
+                element = element.find_element(By.ID, 'foo')
+
+        :rtype: WebElement
+        """
+        if not base_element:
+            base_element = self._parent
+        _raw = self._find_element(by=by, value=value, base_element=base_element._raw)
+        self._exec(_raw)  # test
+        return WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector)
+
+    def find_elements(self, by=By.ID, value=None, base_element=None):
+        """Find elements given a By strategy and locator.
+
+        :Usage:
+            ::
+
+                element = element.find_elements(By.CLASS_NAME, 'foo')
+
+        :rtype: list of WebElement
+        """
+        if not base_element:
+            base_element = self._parent
+        if by == By.CSS_SELECTOR:  # CSS only returns one element
+            return [self.find_element(by=by, value=value, base_element=base_element)]
+        elif by == By.TAG_NAME:
+            raise NotImplementedError()
+        elif by == By.XPATH:
+            elems = []
+            length = self._exec(self._find_elems._by_xpath_result_length(value, base_element._raw))["result"][0]
+            for idx in range(length):
+                # noinspection PyTypeChecker
+                _raw = self._find_elems.by_xpath(value=value, base_element=base_element._raw, idx=idx)
+                self._exec(_raw)  # test
+                elem = WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector)
+                elems.append(elem)
+            return elems
 
     @property
     def raw(self):
-        result = self._exec(self._raw, timeout=4, max_depth=2)['result']
-        if not result:
-            raise NoSuchElementException()
+        return self._exec(self._raw, timeout=4, max_depth=2)['result'][0]
 
     def get_property(self, name):
         """Gets the given property of the element.
@@ -73,40 +154,6 @@ class BaseElement:
 
     def _get_property(self, name: str):
         return self.t.path(name, obj=self._raw)
-
-    @property
-    def _raw(self):
-        return self.t.path("document")
-
-
-# noinspection PyProtectedMember
-class WebElement(BaseElement):
-    """Represents a DOM element.
-
-    Generally, all interesting operations that interact with a document will be
-    performed through this interface.
-
-    All method calls will do a freshness check to ensure that the element
-    reference is still valid.  This essentially determines whether the
-    element is still attached to the DOM.  If this test fails, then an
-    ``StaleElementReferenceException`` is thrown, and all future calls to this
-    instance will fail.
-    """
-
-    def __init__(self, by: str, value: str, tab_id: int, injector, parent=None) -> None:
-        super().__init__(tab_id=tab_id, injector=injector)
-        self._by = by
-        self._value = value
-        if not parent:
-            parent = BaseElement(tab_id=tab_id, injector=injector)
-        self._parent = parent
-
-        # noinspection PyStatementEffect
-        self.raw  # check existence
-
-    @property
-    def _raw(self):
-        return self._find_element(by=self._by, value=self._value, base_element=self.parent)
 
     @property
     def tag_name(self) -> str:
@@ -359,68 +406,3 @@ class WebElement(BaseElement):
         """Internal reference to the WebDriver instance this element was found
         from."""
         return self._parent
-
-    def __eq__(self, element):
-        raise NotImplementedError()
-
-    def __ne__(self, element):
-        raise NotImplementedError()
-
-    def _find_element(self, by=By.ID, value=None, base_element=None):
-        from selenium_injector.types.by import By
-
-        if not base_element:
-            base_element = self
-        if by == By.ID:
-            by = By.CSS_SELECTOR
-            value = f'[id="{value}"]'
-        elif by == By.CLASS_NAME:
-            by = By.CSS_SELECTOR
-            value = f".{value}"
-        elif by == By.NAME:
-            by = By.CSS_SELECTOR
-            value = f'[name="{value}"]'
-
-        if by == By.XPATH:
-            return self.t.path("singleNodeValue",
-                               obj=self.t.exec(self.t.path("document.evaluate"), args=[
-                                   self.t.value(value),
-                                   base_element._raw, self.t.value(None),
-                                   self.t.value(9),  # "XPathResult.FIRST_ORDERED_NODE_TYPE"
-                                   self.t.value(None)
-                               ])
-                               )
-        elif by == By.TAG_NAME:
-            return self.t.exec(self.t.path("getElementsByTagName", obj=base_element._raw), args=[
-                self.t.value(value)
-            ])
-        elif by == By.CSS_SELECTOR:
-            return self.t.exec(self.t.path("querySelector", obj=base_element._raw), args=[
-                self.t.value(value)
-            ])
-        else:
-            raise ValueError("by needs to be selenium.webdriver.common.by.by.py")
-
-    def find_element(self, by=By.ID, value=None, base_element=None):
-        """Find an element given a By strategy and locator.
-
-        :Usage:
-            ::
-
-                element = element.find_element(By.ID, 'foo')
-
-        :rtype: WebElement
-        """
-        return self._exec(self._find_element(by=by, value=None))["result"][0]
-
-    def find_elements(self, by=By.ID, value=None):
-        """Find elements given a By strategy and locator.
-
-        :Usage:
-            ::
-
-                element = element.find_elements(By.CLASS_NAME, 'foo')
-
-        :rtype: list of WebElement
-        """
-        raise NotImplementedError()
