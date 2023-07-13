@@ -28,7 +28,7 @@ from selenium_injector.scripts.socket import JSEvalException
 
 
 # noinspection PyProtectedMember
-class WebElement():
+class WebElement:
     """Represents a DOM element.
 
     Generally, all interesting operations that interact with a document will be
@@ -86,9 +86,9 @@ class WebElement():
         if by == By.XPATH:
             return self._find_elems.by_xpath(value, base_element, 0)
         elif by == By.TAG_NAME:
-            return self.t.path(self.t.value(0), obj=self._find_elems.by_tag_name(value, base_element))
+            return self.t.path(0, obj=self._find_elems.by_tag_name(value, base_element))
         elif by == By.CSS_SELECTOR:
-            return self.t.path(self.t.value(0), self._find_elems.by_css_selector(value, base_element))
+            return self.t.path(0, self._find_elems.by_css_selector(value, base_element))
         else:
             raise ValueError("by needs to be selenium.webdriver.common.by.by.py")
 
@@ -125,19 +125,18 @@ class WebElement():
         elif by == By.TAG_NAME:
             elems = []
             script = self._find_elems.by_tag_name(value, base_element._raw)
-            length = self._exec(self.t.path(self.t.value("length"), obj=script))["result"][0]
+            length = self._exec(self.t.path("length", obj=script))["result"][0]
             for idx in range(length):
-                _raw = self.t.path(self.t.value(0), obj=script)
-                self._exec(_raw)  # test
+                _raw = self.t.path(0, obj=script)
                 elem = WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector)
                 elems.append(elem)
+            return elems
         elif by == By.XPATH:
             elems = []
             length = self._exec(self._find_elems._by_xpath_result_length(value, base_element._raw))["result"][0]
             for idx in range(length):
                 # noinspection PyTypeChecker
                 _raw = self._find_elems.by_xpath(value=value, base_element=base_element._raw, idx=idx)
-                self._exec(_raw)  # test
                 elem = WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector)
                 elems.append(elem)
             return elems
@@ -145,6 +144,10 @@ class WebElement():
     @property
     def raw(self):
         return self._exec(self._raw, timeout=4, max_depth=2)['result'][0]
+
+    @property
+    def source(self):
+        return self._exec(self.t.path("outerHTML", obj=self._raw))["result"][0]
 
     def get_property(self, name):
         """Gets the given property of the element.
