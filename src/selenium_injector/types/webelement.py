@@ -445,7 +445,7 @@ class WebElement:
             try:
                 return self._injector.tabs.exec(type_dict=script, tab_id=self._tab_id)["result"][0]
             except JSEvalException as e:
-                if e.message == "Cannot read properties of undefined (reading 'toLowerCase')":
+                if e.message[:25] == "Cannot read properties of":
                     # is window.document
                     return ""
                 else:
