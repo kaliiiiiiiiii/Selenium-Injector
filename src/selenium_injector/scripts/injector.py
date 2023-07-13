@@ -133,7 +133,7 @@ class Injector(base_injector):
         self.proxy = self.proxy(**kwargs)
         self.webrtc_leak = self.webrtc_leak(**kwargs)
         self.contentsettings = self.contentsettings(**kwargs)
-        self.tabs = self.tabs(**kwargs)
+        self.tabs = self.tabs(debug=debug, **kwargs)
         self.declarativeNetRequest = self.declarativeNetRequest(**kwargs)
         self.cookies = self.cookies(**kwargs)
         self.debugger = self.debugger(**kwargs)
@@ -304,6 +304,10 @@ class Injector(base_injector):
                                      user=self.any_user)
 
     class tabs(base_injector):
+        def __init__(self, debug: bool = None, **kwargs):
+            self._debug = debug
+            super().__init__(**kwargs)
+
         def query(self, query=None, timeout=5):
             if not query:
                 query = {}
@@ -330,7 +334,9 @@ class Injector(base_injector):
             else:
                 raise UserNotFound("chrome not initialized with extensions")
 
-        def exec(self, type_dict: dict, tab_id: int = None, max_depth: int = 2, debug: bool = True, timeout=10):
+        def exec(self, type_dict: dict, tab_id: int = None, max_depth: int = 2, debug: bool = None, timeout=10):
+            if not debug:
+                debug = self._debug
             if not tab_id:
                 tab_id = self.active_tab["id"]
             script = self.t.exec(

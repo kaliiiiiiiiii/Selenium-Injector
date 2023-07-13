@@ -1,5 +1,5 @@
 from selenium.webdriver import ChromeOptions
-from selenium_injector.scripts.injector import Injector, make_config
+from selenium_injector.scripts.injector import Injector
 from selenium.webdriver import Chrome as BaseDriver
 import warnings
 
@@ -25,7 +25,7 @@ class Chrome(BaseDriver):
         if not injector_options or injector_options is True:
             injector_options = {}
 
-        self.injector = Injector(debug=True, **injector_options)
+        self.injector = Injector(**injector_options)
 
         if "options" not in kwargs.keys():
             kwargs["options"] = ChromeOptions()

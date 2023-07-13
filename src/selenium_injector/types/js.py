@@ -75,7 +75,7 @@ class JS:
             ])
 
         def by_css_selector(self, value, base_element):
-            script = self.t.exec(self.t.path("querySelector", obj=base_element), args=[
+            script = self.t.exec(self.t.path("querySelectorAll", obj=base_element), args=[
                 self.t.value(value)
             ])
-            return self.t.list([script])
+            return script

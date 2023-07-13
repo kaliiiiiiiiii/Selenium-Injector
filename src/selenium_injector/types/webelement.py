@@ -14,7 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 # edited by kaliiiiiiiiiii
 
 import warnings
@@ -65,7 +64,7 @@ class WebElement:
         elif parent == "undefined":
             self._parent = None
 
-    def _exec(self, type_dict: dict, max_depth: int = 2, debug: bool = True, timeout=10):
+    def _exec(self, type_dict: dict, max_depth: int = 2, debug: bool = None, timeout=10):
         if self._css_selector() != self._css_selector(current=True):
             raise StaleElementReferenceException(
                 "The element reference is stale; either the element is no longer attached to the DOM, it is not in the current frame context, or the document has been refreshed")
@@ -83,7 +82,7 @@ class WebElement:
         else:
             raise e
 
-    def _find_element(self, by=By.ID, value=None, base_element=None):
+    def _find_element(self, by: str, value: str, base_element=None, idx: int = 0):
         from selenium_injector.types.by import By
 
         if not base_element:
@@ -99,15 +98,15 @@ class WebElement:
             value = f'//*[@name="{value}"]'
 
         if by == By.XPATH:
-            return self._find_elems.by_xpath(value, base_element, 0)
+            return self._find_elems.by_xpath(value, base_element, idx)
         elif by == By.TAG_NAME:
-            return self.t.path(0, obj=self._find_elems.by_tag_name(value, base_element))
+            return self.t.path(idx, obj=self._find_elems.by_tag_name(value, base_element))
         elif by == By.CSS_SELECTOR:
-            return self.t.path(0, self._find_elems.by_css_selector(value, base_element))
+            return self.t.path(idx, self._find_elems.by_css_selector(value, base_element))
         else:
             raise ValueError("by needs to be selenium.webdriver.common.by.by.py")
 
-    def find_element(self, by=By.ID, value=None, base_element=None):
+    def find_element(self, by: str, value: str, base_element=None, idx: int = 0):
         """Find an element given a By strategy and locator.
 
         :Usage:
@@ -118,10 +117,12 @@ class WebElement:
         :rtype: WebElement
         """
         if not base_element:
-            base_element = self._parent
-        _raw = self._find_element(by=by, value=value, base_element=base_element._raw)
-        self._exec(_raw)  # test
-        return WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector, by=by, value=value)
+            base_element = self
+        _raw = self._find_element(by=by, value=value, base_element=base_element._raw, idx=idx)
+        if not self._exec(_raw, max_depth=0)["result"]:
+            raise NoSuchElementException()  # test
+        return WebElement(_raw=_raw, tab_id=self._tab_id, parent=base_element, injector=self._injector, by=by,
+                          value=value)
 
     def find_elements(self, by=By.ID, value=None, base_element=None):
         """Find elements given a By strategy and locator.
@@ -133,16 +134,36 @@ class WebElement:
 
         :rtype: list of WebElement
         """
+        from selenium_injector.types.by import By
+
+        if by == By.ID:
+            by = By.XPATH
+            value = f'//*[@id="{value}"]'
+        elif by == By.CLASS_NAME:
+            by = By.XPATH
+            value = f'//*[@class="{value}"]'
+        elif by == By.NAME:
+            by = By.XPATH
+            value = f'//*[@name="{value}"]'
+
         if not base_element:
-            base_element = self._parent
+            base_element = self
         if by == By.CSS_SELECTOR:  # CSS only returns one element
-            return [self.find_element(by=by, value=value, base_element=base_element), ]
-        elif by == By.TAG_NAME:
+            elems = []
+            script = self._find_elems.by_css_selector(value, base_element._raw)
+            lenght = self._exec(self.t.path("length", obj=script))["result"][0]
+            for idx in range(lenght):
+                _raw = self.t.path(idx, obj=script)
+                elem = WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector, by=by,
+                                  value=value)
+                elems.append(elem)
+            return elems
+        elif by == By.TAG_NAME or by == By.CSS_SELECTOR:
             elems = []
             script = self._find_elems.by_tag_name(value, base_element._raw)
             length = self._exec(self.t.path("length", obj=script))["result"][0]
             for idx in range(length):
-                _raw = self.t.path(0, obj=script)
+                _raw = self.t.path(idx, obj=script)
                 elem = WebElement(_raw=_raw, tab_id=self._tab_id, parent=self, injector=self._injector, by=by,
                                   value=value)
                 elems.append(elem)
@@ -327,7 +348,7 @@ class WebElement:
         """Whether the element is visible to a user."""
         # Only go into this conditional for browsers that don't use the atom themselves
         size = self.size
-        return size["height"] == 0 or size["width"] == 0
+        return not (size["height"] == 0 or size["width"] == 0)
 
     @property
     def location_once_scrolled_into_view(self) -> dict:
@@ -437,6 +458,10 @@ class WebElement:
         """Internal reference to the WebDriver instance this element was found
         from."""
         return self._parent
+
+    @property
+    def children(self):
+        return self.find_elements(By.CSS_SELECTOR, "*")
 
     def _css_selector(self, current=False):
         def getter():
