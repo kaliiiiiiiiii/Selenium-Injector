@@ -30,6 +30,10 @@ class NoSuchElementException(Exception):
     pass
 
 
+class StaleElementReferenceException(Exception):
+    pass
+
+
 # noinspection PyProtectedMember
 class WebElement:
     """Represents a DOM element.
@@ -63,7 +67,8 @@ class WebElement:
 
     def _exec(self, type_dict: dict, max_depth: int = 2, debug: bool = True, timeout=10):
         if self._css_selector() != self._css_selector(current=True):
-            raise NoSuchElementException("DOM css selector changed since query, you might search it up again")
+            raise StaleElementReferenceException(
+                "The element reference is stale; either the element is no longer attached to the DOM, it is not in the current frame context, or the document has been refreshed")
         try:
             if not self._persistent_css_selector:
                 self._persistent_css_selector = self._css_selector
