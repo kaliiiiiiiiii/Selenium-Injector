@@ -48,6 +48,7 @@ class WebElement:
         self._find_elems = injector.socket.js.find_elements
         self._raw = _raw
         self._parent = parent
+        self._persistent_css_selector = None
 
         if not parent:
             self._parent = WebElement(tab_id=tab_id, injector=injector, _raw=self.t.path("document"),
@@ -57,6 +58,8 @@ class WebElement:
 
     def _exec(self, type_dict: dict, max_depth: int = 2, debug: bool = True, timeout=10):
         try:
+            if not self._persistent_css_selector:
+                self._persistent_css_selector = self._css_selector
             return self._injector.tabs.exec(type_dict=type_dict, tab_id=self._tab_id, max_depth=max_depth,
                                             debug=debug, timeout=timeout)
         except JSEvalException as e:
@@ -416,3 +419,27 @@ class WebElement:
         """Internal reference to the WebDriver instance this element was found
         from."""
         return self._parent
+
+    @property
+    def _css_selector(self):
+        if not self._persistent_css_selector:
+            from selenium_injector.scripts.socket import JSEvalException
+            script = self.t.exec(self.t.path("CSSSelector", obj=self.t.this()), args=[self._raw])
+            try:
+                self._persistent_css_selector = \
+                self._injector.tabs.exec(type_dict=script, tab_id=self._tab_id)["result"][0]
+            except JSEvalException as e:
+                if e.message == "Cannot read properties of undefined (reading 'toLowerCase')":
+                    return ""
+                else:
+                    raise e
+        return self._persistent_css_selector
+
+    def __eq__(self, other):
+        if isinstance(other, WebElement):
+            return hash(self._css_selector) == hash(other._css_selector)
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

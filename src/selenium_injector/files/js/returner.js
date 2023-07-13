@@ -5,6 +5,19 @@ globalThis.returner = function(type_json, debug=false, max_depth=2){
             this.max_depth = max_depth
             this.debug = debug
         }
+    CSSSelector(el) {
+      if (el.tagName.toLowerCase() == "html")
+          return "HTML";
+      var str = el.tagName;
+      str += (el.id != "") ? "#" + el.id : "";
+      if (el.className) {
+          var classes = el.className.split(/\s/);
+          for (var i = 0; i < classes.length; i++) {
+              str += "." + classes[i]
+          }
+      }
+      return this.CSSSelector(el.parentNode) + " > " + str;
+}
     handle(request){
             try{ // process request
                 if(this.debug){
