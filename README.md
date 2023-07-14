@@ -69,7 +69,6 @@ for e in event:  # will block forever
 warning: as `driver.quit()` isn't called in this example, it will leave files in your temp directories
 
 #### modify network requests
-note: this is only experimental yet (not included in pypi package)
 
 example script
 ```python
@@ -95,7 +94,6 @@ driver.quit()
 ```
 
 #### use chrome-developer-protocoll
-note: this is only experimental yet (not included in pypi package)
 
 example script
 ```python
@@ -125,7 +123,6 @@ driver.quit()
 ```
 
 #### execute script within tab
-note: this is only experimental yet (not included in pypi package)
 
 from string
 ```python
@@ -161,7 +158,6 @@ driver.quit()
 ```
 
 #### find element
-note: this is only experimental yet (not included in pypi package)
 ```python
 from selenium_injector.webdriver import Chrome
 from selenium_injector.types.by import By
