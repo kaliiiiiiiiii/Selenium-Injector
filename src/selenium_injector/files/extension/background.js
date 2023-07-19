@@ -106,5 +106,48 @@ scripting.tab_exec = function(callback, type_dict, tab_id, max_depth, debug){
 
     }
 
+globalThis.tab_event = {checked_tabs:[],tab_callbacks:undefined}
+
+tab_event.req_callback = function(details) {
+    var tab_id = details['tabId']
+    if(tab_id >= 0){
+        if(!(tab_event.checked_tabs.includes(tab_id))){
+            tab_event.tab_callbacks.forEach((func) => {
+                func(details)
+            })
+            tab_event.checked_tabs.push(tab_id)
+        }
+    }
+    return {};
+  }
+
+tab_event.on_tab_removed = function(tabId) {
+    var idx= tab_event.checked_tabs.indexOf(tabId);
+    tab_event.checked_tabs = tab_event.checked_tabs.splice(idx, 1);
+}
+
+tab_event.addEventListener = function(callback){
+    if(!(tab_event.tab_callbacks)){
+        tab_event.tab_callbacks = [callback]
+        chrome.webRequest.onBeforeRequest.addListener(
+          tab_event.req_callback,
+          {urls: ["<all_urls>"]},
+          ["blocking"]
+        );
+        chrome.tabs.onRemoved.addListener(tab_event.on_tab_removed)
+    }else{tab_event.tab_callbacks.push(callback)}
+}
+
+tab_event.removeEventListener = function(listener){
+    var idx= tab_event.tab_callbacks.indexOf(listener);
+    tab_event.tab_callbacks = tab_event.tab_callbacks.splice(idx, 1);
+}
+
+tab_event.continue_if_paused = function(tab_id){
+}
+tab_event.pause = function(tab_id){
+
+}
+
 
 
