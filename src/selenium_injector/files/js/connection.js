@@ -93,10 +93,14 @@ send_back(...results) {
     response = resp_id + response
     this.connector.socket.send(response)
 }
-event_callback(...results){
+async event_callback(...results){
     this.req_id = this.event_id
-    if(this.event_id && this.event_id[0] === "E"){this.send_back(...results)}
+    if(this.event_id && this.event_id[0] === "E"){await this.send_back(...results)}
     else{throw new TypeError('event_id isn\'t set or doesn\'t start with "E"')}
+    /*if(this.expect_response){
+        msg = await this.recv()
+        this.eval(msg)
+    }*/
 }
 set_event_id(event_id){
  if(event_id[0] === "E"){this.event_id = event_id}

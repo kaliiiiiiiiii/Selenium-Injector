@@ -106,14 +106,14 @@ scripting.tab_exec = function(callback, type_dict, tab_id, max_depth, debug){
 
     }
 
-globalThis.tab_event = {checked_tabs:[],tab_callbacks:undefined}
+globalThis.tab_event = {checked_tabs:[],tab_callbacks:undefined,debugger:{}}
 
-tab_event.req_callback = function(details) {
+tab_event.req_callback = async function(details) {
     var tab_id = details['tabId']
     if(tab_id >= 0){
         if(!(tab_event.checked_tabs.includes(tab_id))){
-            tab_event.tab_callbacks.forEach((func) => {
-                func(details)
+            await tab_event.tab_callbacks.forEach( async function (func){
+                await func(details)
             })
             tab_event.checked_tabs.push(tab_id)
         }
@@ -143,11 +143,29 @@ tab_event.removeEventListener = function(listener){
     tab_event.tab_callbacks = tab_event.tab_callbacks.splice(idx, 1);
 }
 
-tab_event.continue_if_paused = function(tab_id){
+tab_event.pause = async function(details){
+    var tab_id = details['tabId']
+    var target = {"tabId":tab_id /*,allFrames:true*/}
+    await chrome.debugger.attach(target,"1.2")
+    await chrome.debugger.sendCommand(target,"Debugger.enable",{})
+    await chrome.debugger.sendCommand(target,"Debugger.setBreakpointByUrl",{lineNumber:0, urlRegex:".*"},
+        (result) => {chrome.debugger.sendCommand(target, "Debugger.removeBreakpoint",result)}
+    )
 }
-tab_event.pause = function(tab_id){
+
+tab_event.continue_if_paused = async function(details){
+    var tab_id = details['tabId']
+    var target = {"tabId":tab_id}
+    await chrome.debugger.attach(target,"1.2")
+    await chrome.debugger.sendCommand(target,"Debugger.enable",{})
+    await chrome.debugger.sendCommand(target,"Debugger.resume",{})
 
 }
+
+tab_event.debug = function debug(){debugger}
+
+tab_event.addEventListener(console.log)
+// tab_event.addEventListener(tab_event.pause)
 
 
 
