@@ -39,7 +39,7 @@ class SynchronousWebsocketServer:
         self.port = None
 
     # Executed for each websocket
-    async def server_routine(self, websocket):
+    async def server_routine(self, websocket, _any):
         # noinspection PyUnresolvedReferences
         try:
             user = await websocket.recv()
